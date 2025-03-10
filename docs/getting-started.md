@@ -5,6 +5,8 @@ LLVM) and running Rex extensions requires modifications to the Linux
 kernel.  The steps below describe how to set up both the toolchain and
 kernel for running Rex extensions in a VM.
 
+Note that this guide assumes a server machine with ample RAM and processors. For those trying to run Rex on Windows Subsystem for Linux (WSL) and/or personal machines, you should look at [the WSL guide](getting-started-wsl.md).
+
 ## Nix flake
 
 Using Nix, a package manager, allows you to bypass these dependency
