@@ -32,6 +32,8 @@ KSYM_FUNC(bpf_ringbuf_query)
 KSYM_FUNC(bpf_ktime_get_ns)
 KSYM_FUNC(bpf_ktime_get_boot_ns)
 KSYM_FUNC(bpf_ktime_get_coarse_ns)
+KSYM_FUNC(rex_kmalloc)
+KSYM_FUNC(kfree)
 
 // Global variables
 unsigned long jiffies;

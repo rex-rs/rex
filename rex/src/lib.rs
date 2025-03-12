@@ -26,6 +26,7 @@ pub mod tracepoint;
 pub mod utils;
 pub mod xdp;
 
+mod allocator;
 mod base_helper;
 mod bindings;
 mod debug;
@@ -34,13 +35,18 @@ mod per_cpu;
 mod random32;
 mod stub;
 
+extern crate alloc;
 extern crate paste;
 
+use crate::allocator::RexAlloc;
 use crate::prog_type::rex_prog;
 use core::panic::PanicInfo;
 pub use rex_macros::*;
 
 use paste::paste;
+
+#[global_allocator]
+static GLOBAL: RexAlloc = RexAlloc;
 
 #[cfg(not(CONFIG_KALLSYMS_ALL = "y"))]
 compile_error!("CONFIG_KALLSYMS_ALL is required for rex");
@@ -68,3 +74,5 @@ define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
 pub use utils::Result;
+
+pub use alloc::boxed::Box;

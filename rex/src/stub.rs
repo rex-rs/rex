@@ -1,8 +1,8 @@
 /// All kernel symbols we need should be declared here
-use core::ffi::{c_char, c_uchar, VaList};
+use core::ffi::{c_char, c_uchar, c_void, VaList};
 
 use crate::bindings::linux::kernel::{
-    bpf_perf_event_data_kern, pcpu_hot, sk_buff, xdp_buff,
+    bpf_perf_event_data_kern, gfp_t, pcpu_hot, sk_buff, xdp_buff,
 };
 use crate::bindings::uapi::linux::bpf::{bpf_perf_event_value, bpf_spin_lock};
 use crate::panic::{CleanupEntry, ENTRIES_SIZE};
@@ -180,6 +180,12 @@ unsafe extern "C" {
 
     /// u64 bpf_ringbuf_query(void *ringbuf, u64 flags)
     pub(crate) fn bpf_ringbuf_query(ringbuf: *mut (), flags: u64) -> u64;
+
+    /// __alloc_size(1) void *rex_kmalloc(size_t size, gfp_t flags);
+    pub(crate) fn rex_kmalloc(size: usize, flags: gfp_t) -> *mut c_void;
+
+    /// void kfree(const void *objp);
+    pub(crate) fn kfree(objp: *mut c_void);
 }
 
 /// Global variables
