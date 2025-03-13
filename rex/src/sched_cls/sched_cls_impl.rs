@@ -203,7 +203,10 @@ impl sched_cls {
 
     // NOTE: copied from xdp impl, may change in the future
     #[inline(always)]
-    pub fn eth_header<'b>(&self, skb: &'b mut __sk_buff) -> &'b mut ethhdr {
+    pub fn eth_header<'b>(
+        &self,
+        skb: &'b mut __sk_buff,
+    ) -> AlignedMut<'b, ethhdr> {
         unsafe {
             convert_slice_to_struct_mut::<ethhdr>(
                 &mut skb.data_slice[0..mem::size_of::<ethhdr>()],
@@ -212,7 +215,10 @@ impl sched_cls {
     }
 
     #[inline(always)]
-    pub fn udp_header<'b>(&self, skb: &'b mut __sk_buff) -> &'b mut udphdr {
+    pub fn udp_header<'b>(
+        &self,
+        skb: &'b mut __sk_buff,
+    ) -> AlignedMut<'b, udphdr> {
         // NOTE: this assumes packet has ethhdr and iphdr
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<udphdr>() + begin;
@@ -225,7 +231,10 @@ impl sched_cls {
     }
 
     #[inline(always)]
-    pub fn tcp_header<'b>(&self, skb: &'b mut __sk_buff) -> &'b mut tcphdr {
+    pub fn tcp_header<'b>(
+        &self,
+        skb: &'b mut __sk_buff,
+    ) -> AlignedMut<'b, tcphdr> {
         // NOTE: this assumes packet has ethhdr and iphdr
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<tcphdr>() + begin;
@@ -238,7 +247,10 @@ impl sched_cls {
     }
 
     #[inline(always)]
-    pub fn ip_header<'b>(&self, skb: &'b mut __sk_buff) -> &'b mut iphdr {
+    pub fn ip_header<'b>(
+        &self,
+        skb: &'b mut __sk_buff,
+    ) -> AlignedMut<'b, iphdr> {
         // NOTE: this assumes packet has ethhdr
         let begin = mem::size_of::<ethhdr>();
         let end = mem::size_of::<iphdr>() + begin;
