@@ -10,7 +10,7 @@ use rex::xdp::*;
 
 #[rex_xdp]
 fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {
-    let ip_header: &mut iphdr = obj.ip_header(ctx);
+    let mut ip_header = obj.ip_header(ctx);
 
     bpf_printk!(
         obj,
