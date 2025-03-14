@@ -1,6 +1,6 @@
 use core::ffi::{c_int, c_uchar};
 use core::mem;
-use core::ops::{Deref, DerefMut};
+use core::ops::{Deref, DerefMut, Drop};
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
@@ -114,15 +114,16 @@ impl<T> Deref for Aligned<'_, T> {
 /// struct can be constructed with [`convert_slice_to_struct_mut`] from an
 /// underlying data slice. The underlying data is either a direct `&'a mut T` by
 /// reborrowing the slice or a copied value of `T` from the slice, depending on
-/// whether the slice pointer is properly aligned for `T`.
+/// whether the slice pointer is properly aligned for `T`. In the unaligned
+/// case, the mutable reference to slice is also stored in this struct.
 ///
 /// The abstraction provided by this struct is a mutable reference, for an
 /// abstraction over shared references, use [`Aligned`].
-pub struct AlignedMut<'a, T> {
-    inner: AlignedInner<&'a mut T, T>,
+pub struct AlignedMut<'a, T: Copy> {
+    inner: AlignedInner<&'a mut T, (T, &'a mut [c_uchar])>,
 }
 
-impl<'a, T> AlignedMut<'a, T> {
+impl<'a, T: Copy> AlignedMut<'a, T> {
     /// Constructs an `AlignedMut<'a, T>` from an aligned reference.
     #[inline(always)]
     pub(crate) const fn from_ref(aligned_ref: &'a mut T) -> Self {
@@ -131,19 +132,22 @@ impl<'a, T> AlignedMut<'a, T> {
         }
     }
 
-    /// Constructs an `AlignedMut<'a, T>` from a copied value of `T` to handle
-    /// unaligned cases.
+    /// Constructs an `AlignedMut<'a, T>` from a copied value of `T` and the
+    /// original mutable reference to slice to handle unaligned cases.
     #[inline(always)]
-    pub(crate) const fn from_val(copied_val: T) -> Self {
+    pub(crate) const fn from_val(
+        copied_val: T,
+        slice: &'a mut [c_uchar],
+    ) -> Self {
         Self {
-            inner: AlignedInner::Val(copied_val),
+            inner: AlignedInner::Val((copied_val, slice)),
         }
     }
 }
 
 /// Allows users of `AlignedMut<'_, T>` to transparently access the value behind
 /// the reference abstraction.
-impl<T> Deref for AlignedMut<'_, T> {
+impl<T: Copy> Deref for AlignedMut<'_, T> {
     type Target = T;
 
     /// If the underlying data is a `&mut T`, the coerced `&T` is returned;
@@ -153,14 +157,14 @@ impl<T> Deref for AlignedMut<'_, T> {
     fn deref(&self) -> &Self::Target {
         match &self.inner {
             AlignedInner::Ref(aligned_ref) => aligned_ref,
-            AlignedInner::Val(ref unaligned_val) => unaligned_val,
+            AlignedInner::Val(ref unaligned_val) => &unaligned_val.0,
         }
     }
 }
 
 /// Allows users of `AlignedMut<'_, T>` to transparently access and mutate the
 /// value behind the reference abstraction.
-impl<T> DerefMut for AlignedMut<'_, T> {
+impl<T: Copy> DerefMut for AlignedMut<'_, T> {
     /// If the underlying data is a `&mut T`, it is directly returned;
     /// otherwise a mutable reference to the copied value of `T` is taken and
     /// returned.
@@ -168,7 +172,20 @@ impl<T> DerefMut for AlignedMut<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match &mut self.inner {
             AlignedInner::Ref(aligned_ref) => aligned_ref,
-            AlignedInner::Val(ref mut unaligned_val) => unaligned_val,
+            AlignedInner::Val(ref mut unaligned_val) => &mut unaligned_val.0,
+        }
+    }
+}
+
+/// Drop handler to support automatic writeback to the original data slice
+impl<T: Copy> Drop for AlignedMut<'_, T> {
+    #[inline(always)]
+    fn drop(&mut self) {
+        if let AlignedInner::Val(ref mut unaligned_val) = self.inner {
+            unsafe {
+                (unaligned_val.1.as_mut_ptr() as *mut T)
+                    .write_unaligned(unaligned_val.0);
+            }
         }
     }
 }
@@ -238,6 +255,6 @@ where
     if ptr.is_aligned() {
         unsafe { AlignedMut::from_ref(&mut *ptr) }
     } else {
-        unsafe { AlignedMut::from_val(ptr.read_unaligned()) }
+        unsafe { AlignedMut::from_val(ptr.read_unaligned(), slice) }
     }
 }
