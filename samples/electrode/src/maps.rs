@@ -2,12 +2,11 @@ use crate::common::*;
 
 use rex::linux::bpf::bpf_spin_lock;
 use rex::map::*;
-use rex::utils::*;
 
 use rex::rex_map;
-use rex::FieldTransmute;
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct paxos_quorum {
     pub(crate) view: u32,
     pub(crate) opnum: u32,
@@ -15,6 +14,7 @@ pub(crate) struct paxos_quorum {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct paxos_ctr_state {
     pub(crate) state: ReplicaStatus,
     pub(crate) my_idx: u32,
@@ -25,6 +25,7 @@ pub(crate) struct paxos_ctr_state {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct paxos_batch {
     counter: u32,
     lock: bpf_spin_lock,
@@ -53,11 +54,3 @@ pub(crate) static batch_context: RexArrayMap<paxos_batch> =
 pub(crate) static map_prepare_buffer: RexRingBuf = RexRingBuf::new(1 << 20, 0);
 #[rex_map]
 pub(crate) static map_request_buffer: RexRingBuf = RexRingBuf::new(1 << 20, 0);
-
-#[derive(FieldTransmute)]
-#[repr(C, packed)]
-pub struct eth_header {
-    pub h_dest: [u8; ETH_ALEN],
-    pub h_source: [u8; ETH_ALEN],
-    pub h_proto: u16,
-}

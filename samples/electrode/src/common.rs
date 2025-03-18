@@ -31,7 +31,7 @@ pub(crate) const BROADCAST_SIGN_BIT: u32 = 1 << 31;
 pub(crate) const QUORUM_SIZE: u32 = (CLUSTER_SIZE as u32 + 1) >> 1;
 pub(crate) const QUORUM_BITSET_ENTRY: u32 = 1024; // must be 2^t
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(C)]
 pub(crate) enum ReplicaStatus {
     STATUS_NORMAL = 0,
@@ -59,6 +59,7 @@ pub(crate) enum FastProgTc {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct PaxosConfigure {
     pub(crate) addr: u32, // ipv4.
     pub(crate) port: u16,
