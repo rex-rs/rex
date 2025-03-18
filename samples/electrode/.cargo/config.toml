@@ -1,14 +1,16 @@
 [build]
-target = "x86_64-unknown-linux-gnu"
+target = "x86_64-unknown-none"
+
+[target.x86_64-unknown-none]
+linker = "ld.mold"
 rustflags = [
-  "-Cno-redzone",
-  "-Ccode-model=kernel",
-  "-Cforce-unwind-tables=n",
+  "-Zthreads=8",
+  "-Cforce-frame-pointers=y",
   "-Csymbol-mangling-version=v0",
   "-Ccodegen-units=1",
-  "-Ctarget-feature=-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-avx,-avx2,+soft-float",
+  "-Crelocation-model=pie",
+  "-Crelro-level=full",
 ]
 
 [unstable]
 build-std = ["core"]
-build-std-features = ["compiler-builtins-mem"]
