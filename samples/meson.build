@@ -1,5 +1,6 @@
 subdir('atomic')
 subdir('bmc')
+subdir('electrode')
 subdir('error_injector')
 subdir('hello')
 subdir('map_bench')
