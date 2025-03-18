@@ -1,8 +1,8 @@
 #include <arpa/inet.h>
 #include <asm-generic/posix_types.h>
 #include <assert.h>
-#include <bpf.h>
-#include <libbpf.h>
+#include <bpf/bpf.h>
+#include <bpf/libbpf.h>
 #include <linux/bpf.h>
 #include <linux/if_link.h>
 #include <linux/limits.h>
@@ -13,7 +13,6 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "fast_common.h"
@@ -21,7 +20,7 @@
 
 #define BPF_SYSFS_ROOT "/sys/fs/bpf"
 
-#define EXE "./target/x86_64-unknown-linux-gnu/release/electrode"
+#define EXE "./target/x86_64-unknown-none/release/electrode"
 
 struct bpf_progs_desc {
 	char name[256];
@@ -34,21 +33,19 @@ struct bpf_progs_desc {
 struct bpf_object *obj;
 struct bpf_object_load_attr *load_attr;
 struct bpf_program *rx_prog, *tx_prog;
-int err, prog_count;
-int base_fd, rx_prog_fd, tx_prog_fd, xdp_main_prog_fd;
-char filename[PATH_MAX];
-char prog_name[PATH_MAX];
-char commandname[PATH_MAX];
-__u32 xdp_flags = 0;
-int *interfaces_idx;
+static int err;
+static int xdp_main_prog_fd;
+static char filename[PATH_MAX];
+static char prog_name[PATH_MAX];
+static char commandname[PATH_MAX];
+static __u32 xdp_flags = 0;
+static int *interfaces_idx;
 
 struct rlimit r = { RLIM_INFINITY, RLIM_INFINITY };
 
-int opt;
-
-int map_progs_fd, map_progs_xdp_fd, map_progs_tc_fd, map_paxos_ctr_state_fd;
-int map_prepare_buffer_fd, map_configure_fd, map_request_buffer_fd;
-int interface_count = 0;
+static int map_paxos_ctr_state_fd;
+static int map_prepare_buffer_fd, map_configure_fd, map_request_buffer_fd;
+static int interface_count = 0;
 static int nr_cpus = 0;
 
 // define our eBPF program.
@@ -60,13 +57,13 @@ static struct bpf_progs_desc progs[] = {
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 			   va_list args)
 {
-	if (level == LIBBPF_DEBUG || level == LIBBPF_INFO) {
+	if (level == LIBBPF_DEBUG || level == LIBBPF_INFO)
 		return vfprintf(stderr, format, args);
-	}
+
 	return 0;
 }
 
-void read_config()
+static void read_config(void)
 {
 	map_configure_fd =
 		bpf_object__find_map_fd_by_name(obj, "map_configure");
@@ -78,12 +75,11 @@ void read_config()
 
 	FILE *fp;
 	char buff[255];
-	int f = 0, port = 0;
+	int f = 0;
 
 	struct sockaddr_in sa;
 	char str[INET_ADDRSTRLEN];
 	struct paxos_configure conf;
-	int ret = 0;
 
 	const char *eths[FAST_REPLICA_MAX] = { "9c:dc:71:56:8f:45",
 					       "9c:dc:71:56:bf:45",
@@ -95,11 +91,11 @@ void read_config()
 		exit(1);
 	}
 
-	ret = fscanf(fp, "%s", buff); // must be 'f'
-	ret = fscanf(fp, "%d", &f);
+	(void)fscanf(fp, "%s", buff); // must be 'f'
+	(void)fscanf(fp, "%d", &f);
 	for (int i = 0; i < 2 * f + 1; ++i) {
-		ret = fscanf(fp, "%s", buff); // must be 'replica'
-		ret = fscanf(fp, "%s", buff);
+		(void)fscanf(fp, "%s", buff); // must be 'replica'
+		(void)fscanf(fp, "%s", buff);
 
 		char *ipv4 = strtok(buff, ":");
 		assert(ipv4 != NULL);
@@ -111,10 +107,9 @@ void read_config()
 		inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
 		conf.port = htons(atoi(port));
 		conf.addr = sa.sin_addr.s_addr;
-		int items_read =
-			sscanf(eths[i], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			       &conf.eth[0], &conf.eth[1], &conf.eth[2],
-			       &conf.eth[3], &conf.eth[4], &conf.eth[5]);
+		sscanf(eths[i], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &conf.eth[0],
+		       &conf.eth[1], &conf.eth[2], &conf.eth[3], &conf.eth[4],
+		       &conf.eth[5]);
 
 		err = bpf_map_update_elem(map_configure_fd, &i, &conf, 0);
 	}
@@ -123,7 +118,7 @@ void read_config()
 	return;
 }
 
-void create_object()
+static void create_object(void)
 {
 	map_prepare_buffer_fd =
 		bpf_object__find_map_fd_by_name(obj, "map_prepare_buffer");
@@ -148,19 +143,19 @@ void create_object()
 	}
 }
 
-void add_interrupt()
+static void add_interrupt(void)
 {
 	/* asd123www:
           !!!!!! the user-space program shouldn't quit here.
                           Otherwise the program will be lost, due to fd lost???
-  */
+	*/
 	sigset_t signal_mask;
 	sigemptyset(&signal_mask);
 	sigaddset(&signal_mask, SIGINT);
 	sigaddset(&signal_mask, SIGTERM);
 	sigaddset(&signal_mask, SIGUSR1);
 
-	int sig, cur_poll_count = 0, quit = 0;
+	int sig, quit = 0;
 	// FILE *fp = NULL;
 
 	err = sigprocmask(SIG_BLOCK, &signal_mask, NULL);
@@ -215,9 +210,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	for (int i = 0; i < interface_count && optind < argc; optind++, i++) {
+	for (int i = 0; i < interface_count && optind < argc; optind++, i++)
 		interfaces_idx[i] = atoi(argv[optind]);
-	}
+
 	nr_cpus = libbpf_num_possible_cpus();
 
 	if (setrlimit(RLIMIT_MEMLOCK, &r)) {
@@ -249,8 +244,8 @@ int main(int argc, char *argv[])
 	xdp_flags |= XDP_FLAGS_DRV_MODE;
 	/* xdp_flags |= XDP_FLAGS_SKB_MODE; */
 	for (int i = 0; i < interface_count; i++) {
-		if (bpf_set_link_xdp_fd(interfaces_idx[i], xdp_main_prog_fd,
-					xdp_flags) < 0) {
+		if (bpf_xdp_attach(interfaces_idx[i], xdp_main_prog_fd,
+				   xdp_flags, NULL) < 0) {
 			fprintf(stderr,
 				"Error: bpf_set_link_xdp_fd failed for interface %d\n",
 				interfaces_idx[i]);
@@ -308,9 +303,9 @@ int main(int argc, char *argv[])
 	assert(remove("/sys/fs/bpf/paxos_request_buffer") == 0);
 	assert(remove("/sys/fs/bpf/paxos_ctr_state") == 0);
 
-	for (int i = 0; i < interface_count; i++) {
-		bpf_set_link_xdp_fd(interfaces_idx[i], -1, xdp_flags);
-	}
+	for (int i = 0; i < interface_count; i++)
+		bpf_xdp_attach(interfaces_idx[i], -1, xdp_flags, NULL);
+
 	for (int i = 0; i < interface_count && optind < argc; i++) {
 		snprintf(commandname, PATH_MAX, "tc filter del dev %s egress",
 			 argv[optind + i]);
@@ -319,6 +314,7 @@ int main(int argc, char *argv[])
 			 argv[optind + i]);
 		assert(system(commandname) == 0);
 	}
+
 	assert(system("rm -f /sys/fs/bpf/FastBroadCast") == 0);
 	printf("\nasd123www: quit safely!\n");
 
