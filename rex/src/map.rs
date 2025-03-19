@@ -1,14 +1,21 @@
-use crate::utils::{to_result, NoRef, Result};
+use crate::bindings::uapi::linux::bpf::BPF_F_INDEX_MASK;
+use crate::utils::{to_result, NoRef, Result, StreamableProgram};
+use crate::CURRENT_CPU;
 use crate::{
     base_helper::{
-        bpf_map_delete_elem, bpf_map_lookup_elem, bpf_map_peek_elem,
-        bpf_map_pop_elem, bpf_map_push_elem, bpf_map_update_elem,
+        bpf_map_delete_elem,
+        bpf_map_lookup_elem,
+        bpf_map_peek_elem,
+        bpf_map_pop_elem,
+        bpf_map_push_elem,
+        bpf_map_update_elem,
         // bpf_ringbuf_discard, bpf_ringbuf_query, bpf_ringbuf_reserve,
         // bpf_ringbuf_submit,
     },
     linux::bpf::{
         bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY,
-        BPF_MAP_TYPE_HASH, BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_QUEUE,
+        BPF_MAP_TYPE_HASH, BPF_MAP_TYPE_PERCPU_ARRAY,
+        BPF_MAP_TYPE_PERF_EVENT_ARRAY, BPF_MAP_TYPE_QUEUE,
         BPF_MAP_TYPE_RINGBUF, BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE,
         BPF_NOEXIST, BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS, BPF_RB_PROD_POS,
         BPF_RB_RING_SIZE,
@@ -61,6 +68,8 @@ unsafe impl<const MT: bpf_map_type, K, V> Sync for RexMapHandle<MT, K, V> where
 
 pub type RexStackTrace<K, V> = RexMapHandle<BPF_MAP_TYPE_STACK_TRACE, K, V>;
 pub type RexPerCPUArrayMap<V> = RexMapHandle<BPF_MAP_TYPE_PERCPU_ARRAY, u32, V>;
+pub type RexPerfEventArray<V> =
+    RexMapHandle<BPF_MAP_TYPE_PERF_EVENT_ARRAY, u32, V>;
 pub type RexArrayMap<V> = RexMapHandle<BPF_MAP_TYPE_ARRAY, u32, V>;
 pub type RexHashMap<K, V> = RexMapHandle<BPF_MAP_TYPE_HASH, K, V>;
 pub type RexStack<V> = RexMapHandle<BPF_MAP_TYPE_STACK, (), V>;
@@ -117,6 +126,28 @@ where
 
     pub fn delete(&'static self, key: &u32) -> Result {
         bpf_map_delete_elem(self, key)
+    }
+}
+
+impl<'a, V> RexPerfEventArray<V>
+where
+    V: Copy + NoRef,
+{
+    pub fn output_on_cur_cpu<P: StreamableProgram>(
+        &'static self,
+        program: &P,
+        data: &V,
+    ) {
+        context.output_event(self, data, CURRENT_CPU);
+    }
+
+    pub unsafe fn output_on_any_cpu<P: StreamableProgram>(
+        &'static self,
+        program: &P,
+        data: &V,
+        cpu: u64,
+    ) {
+        context.output_event(self, data, cpu & BPF_F_INDEX_MASK);
     }
 }
 

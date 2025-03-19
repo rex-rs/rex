@@ -75,3 +75,14 @@ impl<T: ?Sized> !NoRef for &T {}
 impl<T: ?Sized> !NoRef for &mut T {}
 impl<T: ?Sized> !NoRef for *const T {}
 impl<T: ?Sized> !NoRef for *mut T {}
+
+/// Design decision: programs that can stream data through a
+/// RexPerfEventArray will implement this trait
+pub trait StreamableProgram {
+    pub fn output_event<T>(
+        &self,
+        map: &'static RexPerfEventArray<T>,
+        data: &T,
+        idx: u64,
+    );
+}
