@@ -140,6 +140,51 @@ unsafe extern "C" {
         size: u32,
     ) -> i64;
 
+    /// `long bpf_perf_event_output(void *ctx, struct bpf_map *map, u64
+    ///  flags, void *data, u64 size)`
+    pub(crate) fn bpf_perf_event_output_tp(
+        ctx: *const (),
+        map: *mut (),
+        flags: u64,
+        data: *mut (),
+        size: u64,
+    ) -> i64;
+
+    /// `long bpf_perf_event_read_value(struct bpf_map *map, u64 flags,
+    /// struct bpf_perf_event_value *buf, u32 buf_size)`
+    /// same reason for use of improper_ctypes as bpf_perf_prog_read_value
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_perf_event_read_value(
+        map: *mut (),
+        flags: u64,
+        buf: &mut bpf_perf_event_value,
+        buf_size: u32,
+    ) -> i64;
+
+    /// `long bpf_skb_output(void *ctx, struct bpf_map *map, u64 flags,
+    ///  void *data, u64 size)`
+    /// The man page says that the ctx should point to a struct sk_buff
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_skb_output(
+        ctx: *const sk_buff,
+        map: *mut (),
+        flags: u64,
+        data: *const (),
+        size: u64,
+    ) -> i64;
+
+    /// `long bpf_xdp_output(void *ctx, struct bpf_map *map, u64 flags,
+    ///  void *data, u64 size)`
+    /// The man page says that the ctx should point to a struct xdp_buff
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_xdp_output(
+        ctx: *const xdp_buff,
+        map: *mut (),
+        flags: u64,
+        data: *const (),
+        size: u64,
+    ) -> i64;
+
     /// `long bpf_xdp_adjust_head(struct xdp_buff *xdp, int offset)`
     ///
     /// The compiler complains about some non-FFI safe type, but since the
