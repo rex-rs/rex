@@ -89,7 +89,6 @@
         findutils
         flex
         gcc
-        glibc.dev
         getopt
         gnumake
         ncurses
@@ -99,6 +98,8 @@
         xz.dev
         zlib
         zlib.dev
+
+        cargo-pgo
 
         ninja
         patchedPkgs.rust-bindgen
@@ -144,6 +145,7 @@
 
         zoxide # in case host is using zoxide
         openssh # q-script ssh support
+        zsh
       ];
 
       # (pkgs.buildFHSEnv.override { stdenv = pkgs.llvmPackages.stdenv; })
@@ -151,10 +153,9 @@
         {
           name = "rex-env";
           targetPkgs = pkgs: rexPackages;
-          runScript = "bash";
+          runScript = "zsh";
 
           profile = ''
-            export LD_LIBRARY_PATH=${pkgs.libgcc.lib}/lib:$LD_LIBRARY_PATH
             export NIX_ENFORCE_NO_NATIVE=0
             export PATH=$(realpath "./build/rust-dist/bin"):$PATH
             export RUST_BACKTRACE=1
@@ -174,11 +175,13 @@
           # - https://nixos.org/manual/nixpkgs/stable/#sec-hardening-in-nixpkgs
           # - https://nixos.wiki/wiki/C#Hardening_flags
           hardeningDisable = [ "all" ];
-
+          LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib.outPath}/lib:${pkgs.lib.makeLibraryPath rexPackages}:$LD_LIBRARY_PATH";
           shellHook = ''
-            export LD_LIBRARY_PATH=${pkgs.libgcc.lib}/lib:$LD_LIBRARY_PATH
-            echo "loading rex env"
+
+            export PATH=$(realpath "./build/rust-dist/bin"):$PATH
+            export RUST_BACKTRACE=1
             export NIX_ENFORCE_NO_NATIVE=0
+            echo "loading rex env"
           '';
         };
       };

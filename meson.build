@@ -39,6 +39,7 @@ ninja = find_program('ninja')
 perl = find_program('perl')
 python3_bin = find_program('python3', version: '>=3.11')
 realpath = find_program('realpath')
+lld = find_program('ld.lld')
 
 subdir('linux')
 subdir('librex')

@@ -94,13 +94,13 @@ The repository contains the following directories:
   program type and helper function definitions.
   - You will need to add helper functions to `src/xdp/xdp_impl.rs` but
     should avoid changing any other files.
-- `onboarding_task`: This is the directory of the program you need to
+- `xdp_test`: This is the directory of the program you need to
   implement.
   - Specifically, you should place the rex program code in `src/main.rs`
     and the loader code in `entry.c`.
 
-## Utilize Nix
 
+  ## Utilize Nix
 For this task, we encourage to utilize the support of Nix. Using Nix, a
 package manager, could allow you to bypass the dependency requirements.
 You can find the installation steps [here](../../README.org#nix-flake) All
@@ -110,18 +110,18 @@ subsequent steps should be carried out within this shell.
 
 ```bash
 # assume you are in the rex-kernel
-cd onboarding_task
+cd xdp_test
 # compile the xdp program
 make
 # bind xdp program to interface lo
 ./entry 1
 ```
 
-1. We have provided you with the `samples/onboarding_task` directory for
+1. We have provided you with the `samples/xdp_test` directory for
    the rex version of the XDP program. The function `ip_header` in the
    `rex/src/xdp/xdp_impl.rs` file is used to parse the IP header from a
    packet. It is used: `let ip_header = obj.ip_header(ctx);` in
-   `samples/onboarding_task/src/main.rs`.
+   `samples/xdp_test/src/main.rs`.
 2. For loader implementation:
     - One hint is that `rex_obj_load` and `rex_obj_get_bpf` should be used
       for loading and manipulating rex programs.

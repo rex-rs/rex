@@ -134,7 +134,10 @@ impl xdp {
     }
 
     #[inline(always)]
-    pub fn tcp_header<'b>(&'b self, ctx: &'b mut xdp_md) -> &'b mut tcphdr {
+    pub fn tcp_header<'b>(
+        &self,
+        ctx: &'b mut xdp_md,
+    ) -> AlignedMut<'b, tcphdr> {
         // NOTE: this assumes packet has ethhdr and iphdr
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<tcphdr>() + begin;
@@ -147,7 +150,10 @@ impl xdp {
     }
 
     #[inline(always)]
-    pub fn udp_header<'b>(&self, ctx: &'b mut xdp_md) -> &'b mut udphdr {
+    pub fn udp_header<'b>(
+        &self,
+        ctx: &'b mut xdp_md,
+    ) -> AlignedMut<'b, udphdr> {
         // NOTE: this assumes packet has ethhdr and iphdr
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<udphdr>() + begin;
@@ -159,9 +165,8 @@ impl xdp {
         }
     }
 
-    // WARN: currently we are accessing unaligned struct for iphdr
     #[inline(always)]
-    pub fn ip_header<'b>(&self, ctx: &'b mut xdp_md) -> &'b mut iphdr {
+    pub fn ip_header<'b>(&self, ctx: &'b mut xdp_md) -> AlignedMut<'b, iphdr> {
         // NOTE: this assumes packet has ethhdr
         let begin = mem::size_of::<ethhdr>();
         let end = mem::size_of::<iphdr>() + begin;
@@ -174,7 +179,10 @@ impl xdp {
     }
 
     #[inline(always)]
-    pub fn eth_header<'b>(&self, ctx: &'b mut xdp_md) -> &'b mut ethhdr {
+    pub fn eth_header<'b>(
+        &self,
+        ctx: &'b mut xdp_md,
+    ) -> AlignedMut<'b, ethhdr> {
         unsafe {
             convert_slice_to_struct_mut::<ethhdr>(
                 &mut ctx.data_slice[0..mem::size_of::<ethhdr>()],

@@ -1,7 +1,0 @@
-disallowed-methods = [
-	"core::mem::forget",
-]
-
-disallowed-types = [
-	"core::mem::ManuallyDrop",
-]

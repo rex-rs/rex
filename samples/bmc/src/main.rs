@@ -157,17 +157,23 @@ fn hash_key(
         }
 
         if done_parsing && pctx.key_count > 0 {
-            let eth_header = obj.eth_header(ctx);
-            // exchange src and dst ip and mac
-            swap_field!(eth_header.h_dest, eth_header.h_source, ETH_ALEN);
+            {
+                let eth_header: &mut ethhdr = &mut obj.eth_header(ctx);
+                // exchange src and dst ip and mac
+                swap_field!(eth_header.h_dest, eth_header.h_source, ETH_ALEN);
+            }
 
-            let ip_header_mut = obj.ip_header(ctx);
-            let temp: u32 = *ip_header_mut.saddr();
-            *ip_header_mut.saddr() = *ip_header_mut.daddr();
-            *ip_header_mut.daddr() = temp;
+            {
+                let mut ip_header_mut = obj.ip_header(ctx);
+                let temp: u32 = *ip_header_mut.saddr();
+                *ip_header_mut.saddr() = *ip_header_mut.daddr();
+                *ip_header_mut.daddr() = temp;
+            }
 
-            let udp_header = obj.udp_header(ctx);
-            swap(&mut udp_header.source, &mut udp_header.dest);
+            {
+                let udp_header: &mut udphdr = &mut obj.udp_header(ctx);
+                swap(&mut udp_header.source, &mut udp_header.dest);
+            }
 
             return write_pkt_reply(obj, ctx, payload_index, pctx, stats);
         }
@@ -238,16 +244,20 @@ fn write_pkt_reply(
 
         // INFO: currently only support single key
 
-        // udp check not required
-        let ip_header_mut = obj.ip_header(ctx);
-        ip_header_mut.tot_len =
-            (u16::from_be(ip_header_mut.tot_len) + padding as u16).to_be();
-        ip_header_mut.check = compute_ip_checksum(ip_header_mut);
+        {
+            // udp check not required
+            let mut ip_header_mut = obj.ip_header(ctx);
+            ip_header_mut.tot_len =
+                (u16::from_be(ip_header_mut.tot_len) + padding as u16).to_be();
+            ip_header_mut.check = compute_ip_checksum(&mut ip_header_mut);
+        }
 
-        let udp_header = obj.udp_header(ctx);
-        udp_header.len =
-            (u16::from_be(udp_header.len) + padding as u16).to_be();
-        udp_header.check = 0;
+        {
+            let mut udp_header = obj.udp_header(ctx);
+            udp_header.len =
+                (u16::from_be(udp_header.len) + padding as u16).to_be();
+            udp_header.check = 0;
+        }
 
         let payload = &mut ctx.data_slice[payload_index - 4..];
         payload[0..entry.len as usize]
@@ -268,8 +278,10 @@ fn write_pkt_reply(
 fn bmc_invalidate_cache(obj: &xdp, ctx: &mut xdp_md) -> Result {
     let header_len =
         size_of::<ethhdr>() + size_of::<iphdr>() + size_of::<tcphdr>();
+
     let tcp_header = obj.tcp_header(ctx);
     let port = u16::from_be(tcp_header.dest);
+    drop(tcp_header);
 
     // start after the tcp header
     let payload = &ctx.data_slice[header_len..];
@@ -318,7 +330,11 @@ fn bmc_invalidate_cache(obj: &xdp, ctx: &mut xdp_md) -> Result {
 
 #[rex_xdp]
 fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {
-    match u8::from_be(obj.ip_header(ctx).protocol) as u32 {
+    let iphdr = obj.ip_header(ctx);
+    let protocol = iphdr.protocol;
+    drop(iphdr);
+
+    match u8::from_be(protocol) as u32 {
         IPPROTO_TCP => {
             return bmc_invalidate_cache(obj, ctx);
         }
@@ -329,6 +345,8 @@ fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {
                 size_of::<memcached_udp_header>();
             let udp_header = obj.udp_header(ctx);
             let port = u16::from_be(udp_header.dest);
+            drop(udp_header);
+
             let payload = &ctx.data_slice[header_len..];
 
             // check if using the memcached port

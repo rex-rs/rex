@@ -7,32 +7,35 @@ use std::{
     io::{BufRead, BufReader, Write},
     mem::size_of_val,
     result::Result,
-    sync::{atomic::*, Arc},
+    sync::{Arc, atomic::*},
     vec,
 };
 
 use clap::{Parser, Subcommand, ValueEnum};
 use env_logger::Target;
-use log::{debug, info, LevelFilter};
+use log::{LevelFilter, debug, info};
 use memcache::MemcacheError;
-use rand::distributions::{Alphanumeric, DistString, Distribution};
-use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
+use mimalloc::MiMalloc;
+use rand::{
+    Rng,
+    distr::{Alphanumeric, SampleString},
+};
+use rand_chacha::{ChaCha8Rng, rand_core::SeedableRng};
+use rand_distr::Zipf;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::{
     net::UdpSocket,
     runtime::Builder,
-    sync::{mpsc, Semaphore},
+    sync::{Semaphore, mpsc},
     task::JoinSet,
     time::timeout,
 };
 use tokio_util::task::TaskTracker;
-use mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
-
 
 const BUFFER_SIZE: usize = 1500;
 const SEED: u64 = 12312;
@@ -148,7 +151,7 @@ enum Commands {
 }
 
 fn generate_random_str(len: usize) -> String {
-    Alphanumeric.sample_string(&mut rand::thread_rng(), len)
+    Alphanumeric.sample_string(&mut rand::rng(), len)
 }
 
 fn generate_memcached_test_dict(
@@ -216,7 +219,7 @@ async fn set_memcached_value(
         let client = async_memcached::Client::new(addr.as_str())
             .await
             .expect("TCP memcached connection failed");
-        sockets_pool.push(Arc::new(tokio::sync::Mutex::new(client)));
+        sockets_pool.push(tokio::sync::Mutex::new(client));
     }
     let sockets_pool = Arc::new(sockets_pool);
 
@@ -227,9 +230,9 @@ async fn set_memcached_value(
         let sockets_pool_clone = sockets_pool.clone();
         let key_clone = key.clone();
         let value_clone = value.clone();
-        let permit = Arc::clone(&sem).acquire_owned().await;
+        let sem = sem.clone();
         set.spawn(async move {
-            let _permit = permit;
+            let _permit = sem.acquire_owned().await;
             let mut socket = sockets_pool_clone[count & 0x3F].lock().await;
             socket
                 .set(&*key_clone, &*value_clone, None, None)
@@ -357,10 +360,12 @@ async fn get_command_benchmark(
     }
     let sockets_pool = Arc::new(sockets_pool);
 
-    let mut client =
-        async_memcached::Client::new(format!("tcp://{}:{}", server_address, port))
-            .await
-            .expect("TCP memcached connection failed");
+    let mut client = async_memcached::Client::new(format!(
+        "tcp://{}:{}",
+        server_address, port
+    ))
+    .await
+    .expect("TCP memcached connection failed");
 
     let tracker = TaskTracker::new();
     let cloned_tracker = tracker.clone();
@@ -505,21 +510,19 @@ fn generate_test_entries(
     nums: usize,
 ) -> Vec<(Arc<String>, Arc<String>, Protocol)> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    let zipf = zipf::ZipfDistribution::new(test_dict.len() - 1, 0.99).unwrap();
+    let zipf = Zipf::new((test_dict.len() - 1) as f64, 0.99).unwrap();
 
-    let mut counter: usize = 0;
     let keys: Vec<Arc<String>> = test_dict.keys().cloned().collect();
     (0..nums)
-        .map(|_| {
-            let key = &keys[zipf.sample(&mut rng)];
+        .map(|idx| {
+            let key = &keys[rng.sample(zipf) as usize];
             let value = test_dict.get(key).unwrap();
             // every 31 element is tcp. udp:tcp = 30:1
-            let protocol = if counter % 31 == 30 {
+            let protocol = if idx % 31 == 30 {
                 Protocol::Tcp
             } else {
                 Protocol::Udp
             };
-            counter += 1;
             (key.clone(), value.clone(), protocol)
         })
         .collect()
