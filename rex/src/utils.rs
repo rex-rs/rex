@@ -1,6 +1,6 @@
 use crate::bindings::uapi::linux::bpf::BPF_F_INDEX_MASK;
 use crate::tracepoint::{tp_ctx, tracepoint};
-use crate::Result;
+use crate::{map::RexPerfEventArray, CURRENT_CPU};
 use core::ffi::{c_int, c_uchar};
 use core::mem;
 use core::ops::{Deref, DerefMut, Drop};
@@ -270,7 +270,7 @@ pub enum ProgramContextPair {
 /// RexPerfEventArray will implement this trait
 pub trait StreamableProgram {
     type Context: ?Sized;
-    pub fn output_event<T>(
+    fn output_event<T: Copy + NoRef>(
         &self,
         ctx: &Self::Context,
         map: &'static RexPerfEventArray<T>,
@@ -279,18 +279,22 @@ pub trait StreamableProgram {
     ) -> Result;
 }
 
-/// newtype for a cpu for perf event output
-/// since the cpu must be masked with BPF_F_INDEX_MASK
-pub enum PerfEventMaskedCPU {
-    CurrentCPU,
-    AnyCPU(u64),
+/// newtype for a cpu for perf event output to ensure
+/// type safety since the cpu must be masked
+/// with BPF_F_INDEX_MASK
+pub struct PerfEventMaskedCPU {
+    pub(crate) masked_cpu: u64,
 }
 
 impl PerfEventMaskedCPU {
     pub fn current_cpu() -> Self {
-        PerfEventCPU::CurrentCPU
+        PerfEventMaskedCPU {
+            masked_cpu: CURRENT_CPU,
+        }
     }
     pub fn any_cpu(cpu: u64) -> Self {
-        PerfEventCPU::AnyCPU(cpu & BPF_F_INDEX_MASK)
+        PerfEventMaskedCPU {
+            masked_cpu: cpu & BPF_F_INDEX_MASK,
+        }
     }
 }

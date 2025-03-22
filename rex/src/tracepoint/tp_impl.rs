@@ -1,14 +1,12 @@
-use core::ffi::c_void;
-
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, BPF_PROG_TYPE_TRACEPOINT,
 };
 use crate::prog_type::rex_prog;
 use crate::stub;
 use crate::task_struct::TaskStruct;
-use crate::utils::{PerfEventMaskedCPU, StreamableProgram};
-use crate::Result;
-use crate::{map::*, CURRENT_CPU};
+use crate::utils::{NoRef, PerfEventMaskedCPU, StreamableProgram};
+use crate::{base_helper::termination_check, map::*, to_result, Result};
+use core::{mem, ptr::null};
 
 use super::binding::*;
 
@@ -82,7 +80,7 @@ impl rex_prog for tracepoint {
 
 impl StreamableProgram for tracepoint {
     type Context = tp_ctx;
-    fn output_event<T>(
+    fn output_event<T: Copy + NoRef>(
         &self,
         ctx: &Self::Context,
         map: &'static RexPerfEventArray<T>,
@@ -90,35 +88,31 @@ impl StreamableProgram for tracepoint {
         cpu: PerfEventMaskedCPU,
     ) -> Result {
         let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
-        let masked_cpu = match PerfEventMaskedCPU {
-            PerfEventMaskedCPU::CurrentCPU => CURRENT_CPU,
-            PerfEventMaskedCPU::AnyCPU(cpu) => cpu,
-        };
         termination_check!(unsafe {
             to_result!(match ctx {
                 tp_ctx::Void => stub::bpf_perf_event_output_tp(
-                    c_void,
+                    null(),
                     map_kptr,
-                    masked_cpu,
+                    cpu.masked_cpu,
                     data as *const T as *const (),
-                    mem::size_of::<V>() as u64,
+                    mem::size_of::<T>() as u64,
                 ),
                 tp_ctx::SyscallsEnterOpen(args) => {
                     stub::bpf_perf_event_output_tp(
-                        args as *const SyscallsEnterOpenArgs as *const (),
+                        *args as *const SyscallsEnterOpenArgs as *const (),
                         map_kptr,
-                        masked_cpu,
+                        cpu.masked_cpu,
                         data as *const T as *const (),
-                        mem::size_of::<V>() as u64,
+                        mem::size_of::<T>() as u64,
                     )
                 }
                 tp_ctx::SyscallsExitOpen(args) => {
                     stub::bpf_perf_event_output_tp(
-                        args as *const SyscallsExitOpenArgs as *const (),
+                        *args as *const SyscallsExitOpenArgs as *const (),
                         map_kptr,
-                        masked_cpu,
+                        cpu.masked_cpu,
                         data as *const T as *const (),
-                        mem::size_of::<V>() as u64,
+                        mem::size_of::<T>() as u64,
                     )
                 }
             })

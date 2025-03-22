@@ -49,7 +49,7 @@ impl TaskStruct {
     // a user-provided buffer, here we can take advantage of Rust's ownership by
     // just providing a reference to the CString instead
     pub fn get_comm(&self) -> Result<&CStr, ffi::FromBytesUntilNulError> {
-        CStr::from_bytes_until_nul(&self.kptr.comm)
+        CStr::from_bytes_until_nul(&self.kptr.comm[..])
     }
 
     pub fn get_pt_regs(&self) -> &'static PtRegs {
