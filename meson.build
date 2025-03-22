@@ -73,3 +73,4 @@ sanity_test_scripts = join_paths(meson.project_source_root(), 'scripts/sanity_te
 runtest_deps = []
 
 subdir('samples')
+subdir('rex')
