@@ -1,10 +1,14 @@
+use core::ffi::c_void;
+
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, BPF_PROG_TYPE_TRACEPOINT,
 };
-use crate::map::*;
 use crate::prog_type::rex_prog;
+use crate::stub;
 use crate::task_struct::TaskStruct;
+use crate::utils::{PerfEventMaskedCPU, StreamableProgram};
 use crate::Result;
+use crate::{map::*, CURRENT_CPU};
 
 use super::binding::*;
 
@@ -73,5 +77,51 @@ impl rex_prog for tracepoint {
     fn prog_run(&self, ctx: *mut ()) -> u32 {
         let newctx = self.convert_ctx(ctx);
         ((self.prog)(self, newctx)).unwrap_or_else(|e| e) as u32
+    }
+}
+
+impl StreamableProgram for tracepoint {
+    type Context = tp_ctx;
+    fn output_event<T>(
+        &self,
+        ctx: &Self::Context,
+        map: &'static RexPerfEventArray<T>,
+        data: &T,
+        cpu: PerfEventMaskedCPU,
+    ) -> Result {
+        let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
+        let masked_cpu = match PerfEventMaskedCPU {
+            PerfEventMaskedCPU::CurrentCPU => CURRENT_CPU,
+            PerfEventMaskedCPU::AnyCPU(cpu) => cpu,
+        };
+        termination_check!(unsafe {
+            to_result!(match ctx {
+                tp_ctx::Void => stub::bpf_perf_event_output_tp(
+                    c_void,
+                    map_kptr,
+                    masked_cpu,
+                    data as *const T as *const (),
+                    mem::size_of::<V>() as u64,
+                ),
+                tp_ctx::SyscallsEnterOpen(args) => {
+                    stub::bpf_perf_event_output_tp(
+                        args as *const SyscallsEnterOpenArgs as *const (),
+                        map_kptr,
+                        masked_cpu,
+                        data as *const T as *const (),
+                        mem::size_of::<V>() as u64,
+                    )
+                }
+                tp_ctx::SyscallsExitOpen(args) => {
+                    stub::bpf_perf_event_output_tp(
+                        args as *const SyscallsExitOpenArgs as *const (),
+                        map_kptr,
+                        masked_cpu,
+                        data as *const T as *const (),
+                        mem::size_of::<V>() as u64,
+                    )
+                }
+            })
+        })
     }
 }

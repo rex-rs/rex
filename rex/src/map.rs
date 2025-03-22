@@ -1,5 +1,6 @@
-use crate::bindings::uapi::linux::bpf::BPF_F_INDEX_MASK;
-use crate::utils::{to_result, NoRef, Result, StreamableProgram};
+use crate::utils::{
+    to_result, NoRef, PerfEventMaskedCPU, Result, StreamableProgram,
+};
 use crate::CURRENT_CPU;
 use crate::{
     base_helper::{
@@ -133,21 +134,14 @@ impl<'a, V> RexPerfEventArray<V>
 where
     V: Copy + NoRef,
 {
-    pub fn output_on_cur_cpu<P: StreamableProgram>(
+    pub fn output<P: StreamableProgram>(
         &'static self,
         program: &P,
+        ctx: &P::Context,
         data: &V,
-    ) {
-        context.output_event(self, data, CURRENT_CPU);
-    }
-
-    pub unsafe fn output_on_any_cpu<P: StreamableProgram>(
-        &'static self,
-        program: &P,
-        data: &V,
-        cpu: u64,
-    ) {
-        context.output_event(self, data, cpu & BPF_F_INDEX_MASK);
+        cpu: PerfEventMaskedCPU,
+    ) -> Result {
+        program.output_event(ctx, self, data, cpu)
     }
 }
 

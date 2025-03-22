@@ -1,3 +1,6 @@
+use crate::bindings::uapi::linux::bpf::BPF_F_INDEX_MASK;
+use crate::tracepoint::{tp_ctx, tracepoint};
+use crate::Result;
 use core::ffi::{c_int, c_uchar};
 use core::mem;
 use core::ops::{Deref, DerefMut, Drop};
@@ -259,13 +262,35 @@ where
     }
 }
 
-/// Design decision: programs that can stream data through a
+pub enum ProgramContextPair {
+    Tracepoint(),
+}
+
+/// programs that can stream data through a
 /// RexPerfEventArray will implement this trait
 pub trait StreamableProgram {
+    type Context: ?Sized;
     pub fn output_event<T>(
         &self,
+        ctx: &Self::Context,
         map: &'static RexPerfEventArray<T>,
         data: &T,
-        idx: u64,
-    );
+        cpu: PerfEventMaskedCPU,
+    ) -> Result;
+}
+
+/// newtype for a cpu for perf event output
+/// since the cpu must be masked with BPF_F_INDEX_MASK
+pub enum PerfEventMaskedCPU {
+    CurrentCPU,
+    AnyCPU(u64),
+}
+
+impl PerfEventMaskedCPU {
+    pub fn new_current_cpu() -> Self {
+        PerfEventCPU::CurrentCPU
+    }
+    pub fn new_any_cpu(cpu: u64) -> Self {
+        PerfEventCPU::AnyCPU(cpu & BPF_F_INDEX_MASK)
+    }
 }

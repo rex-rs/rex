@@ -140,13 +140,13 @@ unsafe extern "C" {
         size: u32,
     ) -> i64;
 
-    /// `long bpf_perf_event_output(void *ctx, struct bpf_map *map, u64
+    /// `long bpf_perf_event_output_tp(void *tp_buff, struct bpf_map *map, u64
     ///  flags, void *data, u64 size)`
     pub(crate) fn bpf_perf_event_output_tp(
         tp_buff: *const (),
         map: *mut (),
         flags: u64,
-        data: *mut (),
+        data: *const (),
         size: u64,
     ) -> i64;
 
