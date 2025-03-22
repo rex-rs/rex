@@ -287,10 +287,10 @@ pub enum PerfEventMaskedCPU {
 }
 
 impl PerfEventMaskedCPU {
-    pub fn new_current_cpu() -> Self {
+    pub fn current_cpu() -> Self {
         PerfEventCPU::CurrentCPU
     }
-    pub fn new_any_cpu(cpu: u64) -> Self {
+    pub fn any_cpu(cpu: u64) -> Self {
         PerfEventCPU::AnyCPU(cpu & BPF_F_INDEX_MASK)
     }
 }
