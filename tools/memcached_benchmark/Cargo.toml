@@ -22,7 +22,15 @@ rand_chacha = "0"
 log = "0"
 env_logger = { version = "0" }
 mimalloc = "0"
+anyhow = "1"
 
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+test-log = "0"
+duct = "0"
 
 [profile.release]
 opt-level = 3

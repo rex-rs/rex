@@ -1,10 +1,15 @@
 name: Meson Build and Test
-
 on:
   push:
-    branches: [ main ]
+    branches: [main, ci]
+    paths-ignore:
+      - docs/**
+      - tools/**
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - docs/**
+      - tools/**
 
 jobs:
   build_and_test:
@@ -12,7 +17,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -21,8 +26,6 @@ jobs:
         with:
           path: build
           key: ${{ runner.os }}-${{ runner.name }}-meson-${{ hashFiles('rex-native.ini', 'meson.build') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.name }}-meson
 
       - name: Setup Rex build directory
         run: meson setup --native-file rex-native.ini --reconfigure ./build
@@ -35,4 +38,3 @@ jobs:
 
       - name: Run Rex sanity tests
         run: meson test -C build
-
