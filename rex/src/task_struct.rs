@@ -49,7 +49,11 @@ impl TaskStruct {
     // a user-provided buffer, here we can take advantage of Rust's ownership by
     // just providing a reference to the CString instead
     pub fn get_comm(&self) -> Result<&CStr, ffi::FromBytesUntilNulError> {
-        CStr::from_bytes_until_nul(&self.kptr.comm[..])
+        // casting from c_char to u8 is sound, see:
+        // https://doc.rust-lang.org/stable/src/core/ffi/c_str.rs.html#276-288
+        let comm_bytes =
+            unsafe { &*(&self.kptr.comm[..] as *const _ as *const [u8]) };
+        CStr::from_bytes_until_nul(comm_bytes)
     }
 
     pub fn get_pt_regs(&self) -> &'static PtRegs {
