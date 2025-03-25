@@ -36,6 +36,7 @@ mod stub;
 
 extern crate paste;
 
+use crate::bindings::uapi::linux::bpf::BPF_F_CURRENT_CPU;
 use crate::prog_type::rex_prog;
 use core::panic::PanicInfo;
 pub use rex_macros::*;
@@ -68,3 +69,5 @@ define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
 pub use utils::Result;
+
+pub static CURRENT_CPU: u64 = BPF_F_CURRENT_CPU;

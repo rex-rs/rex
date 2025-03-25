@@ -1,10 +1,12 @@
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, BPF_PROG_TYPE_TRACEPOINT,
 };
-use crate::map::*;
 use crate::prog_type::rex_prog;
+use crate::stub;
 use crate::task_struct::TaskStruct;
-use crate::Result;
+use crate::utils::{NoRef, PerfEventMaskedCPU, StreamableProgram};
+use crate::{base_helper::termination_check, map::*, to_result, Result};
+use core::{mem, ptr::null};
 
 use super::binding::*;
 
@@ -73,5 +75,47 @@ impl rex_prog for tracepoint {
     fn prog_run(&self, ctx: *mut ()) -> u32 {
         let newctx = self.convert_ctx(ctx);
         ((self.prog)(self, newctx)).unwrap_or_else(|e| e) as u32
+    }
+}
+
+impl StreamableProgram for tracepoint {
+    type Context = tp_ctx;
+    fn output_event<T: Copy + NoRef>(
+        &self,
+        ctx: &Self::Context,
+        map: &'static RexPerfEventArray<T>,
+        data: &T,
+        cpu: PerfEventMaskedCPU,
+    ) -> Result {
+        let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
+        termination_check!(unsafe {
+            to_result!(match ctx {
+                tp_ctx::Void => stub::bpf_perf_event_output_tp(
+                    null(),
+                    map_kptr,
+                    cpu.masked_cpu,
+                    data as *const T as *const (),
+                    mem::size_of::<T>() as u64,
+                ),
+                tp_ctx::SyscallsEnterOpen(args) => {
+                    stub::bpf_perf_event_output_tp(
+                        *args as *const SyscallsEnterOpenArgs as *const (),
+                        map_kptr,
+                        cpu.masked_cpu,
+                        data as *const T as *const (),
+                        mem::size_of::<T>() as u64,
+                    )
+                }
+                tp_ctx::SyscallsExitOpen(args) => {
+                    stub::bpf_perf_event_output_tp(
+                        *args as *const SyscallsExitOpenArgs as *const (),
+                        map_kptr,
+                        cpu.masked_cpu,
+                        data as *const T as *const (),
+                        mem::size_of::<T>() as u64,
+                    )
+                }
+            })
+        })
     }
 }

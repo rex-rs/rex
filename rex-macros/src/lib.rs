@@ -12,7 +12,7 @@ use quote::quote;
 use std::borrow::Cow;
 use syn::ItemStatic;
 
-use kprobe::KProbe;
+use kprobe::{KProbe, KprobeFlavor};
 use perf_event::PerfEvent;
 use tc::SchedCls;
 use tracepoint::TracePoint;
@@ -47,7 +47,19 @@ pub fn rex_tc(attrs: TokenStream, item: TokenStream) -> TokenStream {
 pub fn rex_kprobe(attrs: TokenStream, item: TokenStream) -> TokenStream {
     match KProbe::parse(attrs.into(), item.into()) {
         Ok(prog) => prog
-            .expand()
+            .expand(KprobeFlavor::Kprobe)
+            .unwrap_or_else(|err| abort!(err.span(), "{}", err))
+            .into(),
+        Err(err) => abort!(err.span(), "{}", err),
+    }
+}
+
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn rex_uprobe(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    match KProbe::parse(attrs.into(), item.into()) {
+        Ok(prog) => prog
+            .expand(KprobeFlavor::Uprobe)
             .unwrap_or_else(|err| abort!(err.span(), "{}", err))
             .into(),
         Err(err) => abort!(err.span(), "{}", err),
