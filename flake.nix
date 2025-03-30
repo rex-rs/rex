@@ -92,6 +92,7 @@
         getopt
         gnumake
         ncurses
+        openssl
         openssl.dev
         pahole
         pkg-config
@@ -148,12 +149,11 @@
         zsh
       ];
 
-      # (pkgs.buildFHSEnv.override { stdenv = pkgs.llvmPackages.stdenv; })
-      fhs = (pkgs.buildFHSEnv.override { stdenv = pkgs.llvmPackages.stdenv; })
+      llvmBuildFHSEnv = pkgs.buildFHSEnv.override { stdenv = pkgs.llvmPackages.stdenv; };
+      fhsBase =
         {
           name = "rex-env";
           targetPkgs = pkgs: rexPackages;
-          runScript = "zsh";
 
           profile = ''
             export NIX_ENFORCE_NO_NATIVE=0
@@ -161,10 +161,25 @@
             export RUST_BACKTRACE=1
           '';
         };
+
+      fhsRex = llvmBuildFHSEnv (fhsBase // {
+        runScript = "zsh";
+      });
+
+      fhsCI = llvmBuildFHSEnv (fhsBase // {
+        name = "rex-ci";
+        runScript = "
+        meson setup --native-file rex-native.ini --reconfigure ./build || exit 1 
+        meson compile -C build build_deps || exit 1
+        meson compile -C build || exit 1
+        meson test -C build || exit 1
+        ";
+      });
+
     in
     {
       devShells."${system}" = {
-        default = fhs.env;
+        default = fhsRex.env;
 
         rex = pkgs.mkShell {
           packages = rexPackages;

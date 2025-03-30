@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # based on: https://github.com/fomichev/dotfiles/blob/master/bin/q
 
 usage() {
@@ -61,7 +61,7 @@ host() {
 	cmdline+=" ro"
 	cmdline+=" nokaslr"
 	cmdline+=" $CMDLINE"
-	cmdline+=" init=/bin/sh -- -c \"$(realpath $0) -g $opts -H $HOME -k '$(pwd)' -a '$*'\""
+	cmdline+=" init=/usr/bin/env sh -- -c \"$(realpath $0) -g $opts -H $HOME -k '$(pwd)' -a '$*'\""
 
 	qemu-system-x86_64 \
 		-nodefaults \
@@ -106,6 +106,12 @@ say() {
 # This function is called _AFTER_ QEMU starts (on guest).
 guest() {
 	export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+	export PATH=$HOME/.nix-profile/bin:$PATH
+
+	if [[ -f "$KERNEL/nix_path" ]]; then
+		NEW_PATHS=$(/usr/bin/env bat "$KERNEL/nix_path")
+		export PATH="${NEW_PATHS}:${PATH}"
+	fi
 
 	say pivot root
 
@@ -254,7 +260,6 @@ export PATH=\$HOME/local/bin:\$PATH
 export PATH=\$KERNEL/tools/bpf/bpftool:\$PATH
 export PATH=\$KERNEL/tools/perf:\$PATH
 export PATH=\$HOME/.nix-profile/bin:\$PATH
-export LD_LIBRARY_PATH=/inner_unikernels/librex:/inner_unikernels/tools/lib/bpf:$LD_LIBRARY_PATH
 EOF
 
 	cat << EOF >> $HOME/.bashrc

@@ -55,7 +55,6 @@ rust_bootstrap = custom_target(
     '--set', 'install.prefix=@OUTDIR@/rust-dist'
   ],
   console: true,
-  env: ['RUSTFLAGS=-Z threads=8 -C target-cpu=native -C codegen-units=1 -C link-arg=-fuse-ld=mold -C link-arg=-Wl,-O1 -C link-arg=-Wl,--as-needed -C link-arg=-flto=thin'],
   build_by_default: false
 )
 
