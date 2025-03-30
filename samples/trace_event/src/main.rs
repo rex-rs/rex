@@ -8,7 +8,8 @@ use rex::linux::bpf::*;
 use rex::linux::perf_event::PERF_MAX_STACK_DEPTH;
 use rex::map::*;
 use rex::perf_event::*;
-use rex::{Result, rex_map, rex_perf_event};
+use rex::utils::copy_cstr_to_array;
+use rex::{rex_map, rex_perf_event, Result};
 
 pub const TASK_COMM_LEN: usize = 16;
 
@@ -16,7 +17,7 @@ pub const TASK_COMM_LEN: usize = 16;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct KeyT {
-    pub comm: [i8; TASK_COMM_LEN],
+    pub comm: [u8; TASK_COMM_LEN],
     pub kernstack: u32,
     pub userstack: u32,
 }
@@ -51,7 +52,8 @@ fn rex_prog1(obj: &perf_event, ctx: &bpf_perf_event_data) -> Result {
 
     obj.bpf_get_current_task()
         .map(|t| {
-            t.get_comm(&mut key.comm);
+            let prog_name = t.get_comm().unwrap_or_default();
+            copy_cstr_to_array(prog_name, &mut key.comm);
             0u64
         })
         .ok_or(0i32)?;

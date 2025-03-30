@@ -1,7 +1,8 @@
-use crate::bindings::uapi::linux::bpf::BPF_F_INDEX_MASK;
+use crate::bindings::uapi::linux::bpf::{BPF_F_CURRENT_CPU, BPF_F_INDEX_MASK};
+use crate::bindings::uapi::linux::errno::EINVAL;
+use crate::map::RexPerfEventArray;
 use crate::tracepoint::{tp_ctx, tracepoint};
-use crate::{map::RexPerfEventArray, CURRENT_CPU};
-use core::ffi::{c_int, c_uchar};
+use core::ffi::{c_int, c_uchar, CStr};
 use core::mem;
 use core::ops::{Deref, DerefMut, Drop};
 
@@ -262,10 +263,6 @@ where
     }
 }
 
-pub enum ProgramContextPair {
-    Tracepoint(),
-}
-
 /// programs that can stream data through a
 /// RexPerfEventArray will implement this trait
 pub trait StreamableProgram {
@@ -289,7 +286,7 @@ pub struct PerfEventMaskedCPU {
 impl PerfEventMaskedCPU {
     pub fn current_cpu() -> Self {
         PerfEventMaskedCPU {
-            masked_cpu: CURRENT_CPU,
+            masked_cpu: BPF_F_CURRENT_CPU,
         }
     }
     pub fn any_cpu(cpu: u64) -> Self {
@@ -297,4 +294,21 @@ impl PerfEventMaskedCPU {
             masked_cpu: cpu & BPF_F_INDEX_MASK,
         }
     }
+}
+
+pub fn copy_cstr_to_array<const N: usize>(
+    src: &CStr,
+    dst: &mut [u8; N],
+) -> Result {
+    if N == 0 {
+        return Err(-(EINVAL as i32));
+    }
+    let src_bytes = src.to_bytes_with_nul();
+    let size = core::cmp::min::<usize>(N, src_bytes.len()) - 1;
+    if size == 0 {
+        return Err(-(EINVAL as i32));
+    }
+    dst[..size].copy_from_slice(&src_bytes[..size]);
+    dst[size] = 0;
+    Ok(0)
 }

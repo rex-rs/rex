@@ -53,7 +53,7 @@ impl KProbe {
         let attached_function = if self.function.is_some() {
             format!("rex/{}/{}", flavor, self.function.as_ref().unwrap())
         } else {
-            "rex/kprobe".to_string()
+            format!("rex/{}", flavor)
         };
 
         let function_body_tokens = quote! {

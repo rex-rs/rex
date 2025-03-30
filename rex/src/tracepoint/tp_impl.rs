@@ -21,6 +21,20 @@ pub enum tp_ctx {
     SyscallsExitOpen(&'static SyscallsExitOpenArgs),
 }
 
+impl tp_ctx {
+    unsafe fn get_ptr(&self) -> *const () {
+        match self {
+            tp_ctx::Void => null(),
+            tp_ctx::SyscallsEnterOpen(args) => {
+                *args as *const SyscallsEnterOpenArgs as *const ()
+            }
+            tp_ctx::SyscallsExitOpen(args) => {
+                *args as *const SyscallsExitOpenArgs as *const ()
+            }
+        }
+    }
+}
+
 /// First 3 fields should always be rtti, prog_fn, and name
 ///
 /// rtti should be u64, therefore after compiling the
@@ -88,34 +102,15 @@ impl StreamableProgram for tracepoint {
         cpu: PerfEventMaskedCPU,
     ) -> Result {
         let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
+        let ctx_ptr = unsafe { ctx.get_ptr() };
         termination_check!(unsafe {
-            to_result!(match ctx {
-                tp_ctx::Void => stub::bpf_perf_event_output_tp(
-                    null(),
-                    map_kptr,
-                    cpu.masked_cpu,
-                    data as *const T as *const (),
-                    mem::size_of::<T>() as u64,
-                ),
-                tp_ctx::SyscallsEnterOpen(args) => {
-                    stub::bpf_perf_event_output_tp(
-                        *args as *const SyscallsEnterOpenArgs as *const (),
-                        map_kptr,
-                        cpu.masked_cpu,
-                        data as *const T as *const (),
-                        mem::size_of::<T>() as u64,
-                    )
-                }
-                tp_ctx::SyscallsExitOpen(args) => {
-                    stub::bpf_perf_event_output_tp(
-                        *args as *const SyscallsExitOpenArgs as *const (),
-                        map_kptr,
-                        cpu.masked_cpu,
-                        data as *const T as *const (),
-                        mem::size_of::<T>() as u64,
-                    )
-                }
-            })
+            to_result!(stub::bpf_perf_event_output_tp(
+                ctx_ptr,
+                map_kptr,
+                cpu.masked_cpu,
+                data as *const T as *const (),
+                mem::size_of::<T>() as u64,
+            ))
         })
     }
 }

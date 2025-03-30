@@ -1,7 +1,6 @@
 use crate::utils::{
     to_result, NoRef, PerfEventMaskedCPU, Result, StreamableProgram,
 };
-use crate::CURRENT_CPU;
 use crate::{
     base_helper::{
         bpf_map_delete_elem,

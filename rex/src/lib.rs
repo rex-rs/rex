@@ -69,5 +69,3 @@ define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
 pub use utils::Result;
-
-pub static CURRENT_CPU: u64 = BPF_F_CURRENT_CPU;
