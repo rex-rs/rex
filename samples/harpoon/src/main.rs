@@ -10,6 +10,7 @@ use rex::tracepoint::*;
 use rex::kprobe::kprobe;
 use rex::map::{RexArrayMap, RexHashMap, RexPerfEventArray};
 use rex::pt_regs::PtRegs;
+use rex::utils::PerfEventMaskedCPU;
 use core::ffi::CStr;
 
 #[repr(C)]
@@ -21,7 +22,7 @@ struct Config {
 #[repr(C)]
 #[derive(Clone, Copy, core::Default)]
 struct SyscallData {
-    id: u32,
+    id: i64,
 }
 
 #[repr(C)]
@@ -55,8 +56,8 @@ fn exit_function(obj: &kprobe, ctx: &mut PtRegs) -> Result {
     bpf_printk!(obj, c"Exit function.\n");
 }
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint(name = "raw_syscalls/sys_enter", tp_type = "RawSyscallsEnter")]
+fn rex_prog1(obj: &tracepoint, ctx: tp_ctx) -> Result {
     let mut data = SyscallData::new();
     let key_config = 0;
     let key_trace = 0;
@@ -94,6 +95,17 @@ fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
     if command != input_command {
         return Err(1);
     }
+
+    let id = match ctx {
+        RawSyscallsEnter(args) => args.id,
+        _ => 0,
+    };
+
+    data.id = id;
+
+    EVENTS.output(obj, ctx, data, PerfEventMaskedCPU::current_cpu());
+
+    bpf_printk!(obj, c"Sending syscall id %llu.\n", id as u64);
 
     Ok(0)
 }

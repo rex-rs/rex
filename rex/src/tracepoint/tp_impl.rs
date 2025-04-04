@@ -14,11 +14,13 @@ pub enum tp_type {
     Void,
     SyscallsEnterOpen,
     SyscallsExitOpen,
+    RawSyscallsEnter,
 }
 pub enum tp_ctx {
     Void,
     SyscallsEnterOpen(&'static SyscallsEnterOpenArgs),
     SyscallsExitOpen(&'static SyscallsExitOpenArgs),
+    RawSyscallsEnter(&'static RawSyscallsEnterArgs),
 }
 
 impl tp_ctx {
@@ -30,6 +32,9 @@ impl tp_ctx {
             }
             tp_ctx::SyscallsExitOpen(args) => {
                 *args as *const SyscallsExitOpenArgs as *const ()
+            }
+            tp_ctx::RawSyscallsEnter(args) => {
+                *args as *const RawSyscallsEnterArgs as *const ()
             }
         }
     }
@@ -76,6 +81,9 @@ impl tracepoint {
             }),
             tp_type::SyscallsExitOpen => tp_ctx::SyscallsExitOpen(unsafe {
                 &*(ctx as *mut SyscallsExitOpenArgs)
+            }),
+            tp_type::RawSyscallsEnter => tp_ctx::RawSyscallsEnter(unsafe {
+                &*(ctx as *mut RawSyscallsEnterArgs)
             }),
         }
     }
