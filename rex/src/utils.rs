@@ -279,6 +279,7 @@ pub trait StreamableProgram {
 /// newtype for a cpu for perf event output to ensure
 /// type safety since the cpu must be masked
 /// with BPF_F_INDEX_MASK
+#[derive(Debug, Copy, Clone)]
 pub struct PerfEventMaskedCPU {
     pub(crate) masked_cpu: u64,
 }

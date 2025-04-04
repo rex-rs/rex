@@ -15,3 +15,11 @@ pub struct SyscallsExitOpenArgs {
     pub syscall_nr: i64,
     pub ret: i64,
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RawSyscallsEnterArgs {
+    pub unused: u64,
+    pub id: i64,
+    pub args: [u64; 6],
+}
