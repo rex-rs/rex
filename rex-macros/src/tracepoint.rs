@@ -56,6 +56,7 @@ impl TracePoint {
             "Void" => quote!(tp_type::Void),
             "SyscallsEnterOpen" => quote!(tp_type::SyscallsExitOpen),
             "SyscallsExitOpen" => quote!(tp_type::SyscallsExitOpen),
+            "RawSyscallsEnter" => quote! {tp_type::RawSyscallsEnter},
             _ => panic!("Please provide valid tp_type"),
         };
 

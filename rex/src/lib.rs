@@ -36,6 +36,7 @@ mod stub;
 
 extern crate paste;
 
+use crate::bindings::uapi::linux::bpf::BPF_F_CURRENT_CPU;
 use crate::prog_type::rex_prog;
 use core::panic::PanicInfo;
 pub use rex_macros::*;
