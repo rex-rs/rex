@@ -8,7 +8,7 @@ use rex::map::RexArrayMap;
 use rex::spinlock::rex_spinlock_guard;
 use rex::xdp::*;
 use rex::{Result, rex_map};
-use rex::{bpf_printk, rex_xdp};
+use rex::{rex_printk, rex_xdp};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -28,14 +28,10 @@ fn rex_prog1(obj: &xdp, _: &mut xdp_md) -> Result {
             let _guard = rex_spinlock_guard::new(&mut entry.lock);
         }
         let end = obj.bpf_ktime_get_ns();
-        bpf_printk!(
-            obj,
-            c"Spinlock allocation and cleanup: %llu ns",
-            end - start
-        );
+        rex_printk!("Spinlock allocation and cleanup: {} ns", end - start)?;
         Ok(XDP_PASS as i32)
     } else {
-        bpf_printk!(obj, c"Unable to look up map");
+        rex_printk!("Unable to look up map")?;
         Err(XDP_PASS as i32)
     }
 }
