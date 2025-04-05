@@ -2,24 +2,13 @@
 use core::ffi::{c_char, c_uchar, VaList};
 
 use crate::bindings::linux::kernel::{
-    bpf_perf_event_data_kern, pcpu_hot, sk_buff, xdp_buff,
+    bpf_perf_event_data_kern, pcpu_hot, sk_buff, xdp_buff, MAX_BPRINTF_BUF,
 };
 use crate::bindings::uapi::linux::bpf::{bpf_perf_event_value, bpf_spin_lock};
 use crate::panic::{CleanupEntry, ENTRIES_SIZE};
 
 /// Functions
 unsafe extern "C" {
-    /// `long bpf_trace_printk(const char *fmt, u32 fmt_size, ...)`
-    ///
-    /// Helpers takes at most 5 args so this function takes at most 3 fmt args
-    pub(crate) fn bpf_trace_printk(
-        fmt: *const c_char,
-        fmt_size: u32,
-        arg1: u64,
-        arg2: u64,
-        arg3: u64,
-    ) -> i64;
-
     /// `void *bpf_map_lookup_elem(struct bpf_map *map, const void *key)`
     ///
     /// `struct bpf_map` is opaque in our case so make it a `*mut ()`
@@ -103,7 +92,7 @@ unsafe extern "C" {
     /// `__nocfi noinline void notrace __noreturn rex_landingpad(char *msg)`
     ///
     /// The in-kernel panic landingpad for panic recovery
-    pub(crate) fn rex_landingpad(msg: *const u8) -> !;
+    pub(crate) fn rex_landingpad() -> !;
 
     /// `long bpf_spin_lock(struct bpf_spin_lock *lock)`
     pub(crate) fn bpf_spin_lock(lock: *mut bpf_spin_lock) -> i64;
@@ -180,6 +169,9 @@ unsafe extern "C" {
 
     /// u64 bpf_ringbuf_query(void *ringbuf, u64 flags)
     pub(crate) fn bpf_ringbuf_query(ringbuf: *mut (), flags: u64) -> u64;
+
+    /// void rex_trace_printk(void)
+    pub(crate) fn rex_trace_printk();
 }
 
 /// Global variables
@@ -229,4 +221,7 @@ unsafe extern "C" {
     ///
     /// Offset on the current
     pub(crate) static this_cpu_off: u64;
+
+    /// DEFINE_PER_CPU(char[MAX_BPRINTF_BUF], rex_log_buf) = { 0 };
+    pub(crate) static mut rex_log_buf: [u8; MAX_BPRINTF_BUF as usize];
 }

@@ -29,6 +29,7 @@ pub mod xdp;
 mod base_helper;
 mod bindings;
 mod debug;
+mod log;
 mod panic;
 mod per_cpu;
 mod random32;
@@ -67,4 +68,5 @@ define_prog_entry!(xdp);
 define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
+pub use log::rex_trace_printk;
 pub use utils::Result;

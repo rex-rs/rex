@@ -7,7 +7,7 @@ use rex::kprobe::*;
 use rex::linux::bpf::*;
 use rex::map::*;
 use rex::pt_regs::PtRegs;
-use rex::{Result, bpf_printk, rex_kprobe, rex_map};
+use rex::{Result, rex_kprobe, rex_map, rex_printk};
 
 #[rex_map]
 static MAP_HASH: RexHashMap<u32, u64> = RexHashMap::new(5000, 0);
@@ -26,7 +26,7 @@ fn rex_prog1(obj: &kprobe, _ctx: &mut PtRegs) -> Result {
     obj.bpf_map_lookup_elem(&MAP_HASH, &zero);
     let end = obj.bpf_ktime_get_ns();
 
-    bpf_printk!(obj, c"Time elapsed: %llu", end - start);
+    rex_printk!("Time elapsed: {}", end - start)?;
 
     // let random = obj.bpf_get_prandom_u32() as u64;
     // obj.bpf_map_update_elem(&MAP_ARRAY, &zero, &random, BPF_ANY as u64)?;
@@ -35,7 +35,7 @@ fn rex_prog1(obj: &kprobe, _ctx: &mut PtRegs) -> Result {
     // obj.bpf_map_lookup_elem(&MAP_ARRAY, &zero);
     // let end = obj.bpf_ktime_get_ns();
     //
-    // bpf_printk!(obj, c"Time elapsed: %llu", end - start);
+    // rex_printk!("Time elapsed: {}", end - start)?;
 
     Ok(0)
 }

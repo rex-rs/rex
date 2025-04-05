@@ -19,7 +19,8 @@ k_structs = ['task_struct', 'tk_read_base', 'seqcount_raw_spinlock_t',
              'bpf_perf_event_data_kern']
 
 bindgen_kernel_cmd = '''bindgen %s --allowlist-type="%s"
---allowlist-var="(___GFP.*|CONFIG_.*)" --opaque-type xregs_state
+--allowlist-var="(___GFP.*|CONFIG_.*|MAX_BPRINTF_BUF)"
+--opaque-type xregs_state
 --opaque-type desc_struct --opaque-type arch_lbr_state --opaque-type
 local_apic --opaque-type alt_instr --opaque-type x86_msi_data --opaque-type
 x86_msi_addr_lo --opaque-type kunit_try_catch --opaque-type spinlock

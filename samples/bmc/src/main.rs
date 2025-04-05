@@ -9,7 +9,7 @@ use rex::sched_cls::*;
 use rex::spinlock::*;
 use rex::utils::*;
 use rex::xdp::*;
-use rex::{bpf_printk, rex_map, rex_tc, rex_xdp};
+use rex::{rex_map, rex_printk, rex_tc, rex_xdp};
 
 const BMC_MAX_PACKET_LENGTH: usize = 1500;
 const BMC_CACHE_ENTRY_COUNT: u32 = 3250000;
@@ -237,7 +237,7 @@ fn write_pkt_reply(
         match obj.bpf_xdp_adjust_tail(ctx, padding) {
             Ok(_) => {}
             Err(_) => {
-                bpf_printk!(obj, c"adjust tail failed\n");
+                rex_printk!("adjust tail failed\n")?;
                 return Ok(XDP_DROP as i32);
             }
         }

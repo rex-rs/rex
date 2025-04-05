@@ -7,9 +7,9 @@ pub use crate::bindings::linux::kernel::{
 };
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
 use crate::debug::printk;
+use crate::map::*;
 use crate::prog_type::rex_prog;
 use crate::utils::*;
-use crate::{bpf_printk, map::*};
 use core::ffi::{c_uchar, c_uint, c_void};
 use core::{mem, mem::size_of, slice};
 

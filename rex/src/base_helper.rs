@@ -49,23 +49,6 @@ pub(crate) fn bpf_get_smp_processor_id() -> i32 {
     unsafe { this_cpu_read(cpu_number()) }
 }
 
-pub(crate) fn bpf_trace_printk(
-    fmt: &CStr,
-    arg1: u64,
-    arg2: u64,
-    arg3: u64,
-) -> Result {
-    termination_check!(unsafe {
-        to_result!(stub::bpf_trace_printk(
-            fmt.as_ptr(),
-            (fmt.count_bytes() + 1) as u32,
-            arg1,
-            arg2,
-            arg3
-        ))
-    })
-}
-
 pub(crate) fn bpf_map_lookup_elem<'a, const MT: bpf_map_type, K, V>(
     map: &'static RexMapHandle<MT, K, V>,
     key: &'a K,
@@ -415,17 +398,6 @@ macro_rules! base_helper_defs {
             crate::base_helper::bpf_get_smp_processor_id()
         }
 
-        #[inline(always)]
-        pub fn bpf_trace_printk(
-            &self,
-            fmt: &core::ffi::CStr,
-            arg1: u64,
-            arg2: u64,
-            arg3: u64,
-        ) -> crate::Result {
-            crate::base_helper::bpf_trace_printk(fmt, arg1, arg2, arg3)
-        }
-
         // Self should already have impl<'a>
         #[inline(always)]
         pub fn bpf_map_lookup_elem<'b, const MT: bpf_map_type, K, V>(
@@ -581,29 +553,5 @@ macro_rules! base_helper_defs {
     };
 }
 
-#[macro_export]
-macro_rules! bpf_printk {
-    ($obj:expr, $fmt:expr) => {
-        $obj.bpf_trace_printk($fmt, 0, 0, 0)
-            .map_or_else(|_| (), |_| ())
-    };
-
-    ($obj:expr, $fmt:expr, $arg1:expr) => {
-        $obj.bpf_trace_printk($fmt, $arg1.into(), 0, 0)
-            .map_or_else(|_| (), |_| ())
-    };
-
-    ($obj:expr, $fmt:expr, $arg1:expr, $arg2:expr) => {
-        $obj.bpf_trace_printk($fmt, $arg1.into(), $arg2.into(), 0)
-            .map_or_else(|_| (), |_| ())
-    };
-
-    ($obj:expr, $fmt:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
-        $obj.bpf_trace_printk($fmt, $arg1.into(), $arg2.into(), $arg3.into())
-            .map_or_else(|_| (), |_| ())
-    };
-}
-
 pub(crate) use base_helper_defs;
-pub use bpf_printk;
 pub(crate) use termination_check;

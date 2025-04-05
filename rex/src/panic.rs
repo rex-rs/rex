@@ -1,7 +1,9 @@
 //! Implementation of various routines/frameworks related to EH/termination
 
+use core::fmt::Write;
 use core::panic::PanicInfo;
 
+use crate::log::LogBuf;
 use crate::per_cpu::this_cpu_ptr_mut;
 use crate::stub;
 
@@ -173,17 +175,10 @@ fn panic(info: &PanicInfo) -> ! {
 
     unsafe { CleanupEntries::cleanup_all() };
 
-    // Print the msg
-    let mut msg = [0u8; 128];
-    let args = info.message();
-    // Only works in the most trivial case: no format args
-    if let Some(s) = args.as_str() {
-        let len = core::cmp::min(msg.len() - 1, s.len());
-        msg[..len].copy_from_slice(&(*s).as_bytes()[..len]);
-        msg[len] = 0u8;
-    } else {
-        let s = "Rust program panicked\n\0";
-        msg[..s.len()].copy_from_slice(s.as_bytes());
+    let mut buf = LogBuf::new();
+    if write!(&mut buf, "{}", info).is_err() {
+        write!(&mut buf, "unknown rust panic");
     }
-    unsafe { stub::rex_landingpad(msg.as_ptr()) }
+
+    unsafe { stub::rex_landingpad() }
 }
