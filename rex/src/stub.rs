@@ -9,17 +9,6 @@ use crate::panic::{CleanupEntry, ENTRIES_SIZE};
 
 /// Functions
 unsafe extern "C" {
-    /// `long bpf_trace_printk(const char *fmt, u32 fmt_size, ...)`
-    ///
-    /// Helpers takes at most 5 args so this function takes at most 3 fmt args
-    pub(crate) fn bpf_trace_printk(
-        fmt: *const c_char,
-        fmt_size: u32,
-        arg1: u64,
-        arg2: u64,
-        arg3: u64,
-    ) -> i64;
-
     /// `void *bpf_map_lookup_elem(struct bpf_map *map, const void *key)`
     ///
     /// `struct bpf_map` is opaque in our case so make it a `*mut ()`

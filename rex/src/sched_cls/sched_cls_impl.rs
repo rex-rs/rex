@@ -13,7 +13,7 @@ use crate::prog_type::rex_prog;
 use crate::utils::*;
 
 use crate::base_helper::termination_check;
-use crate::{bpf_printk, map::*};
+use crate::map::*;
 use core::ffi::{c_char, c_uchar, c_uint, c_void};
 use core::{mem, slice};
 
