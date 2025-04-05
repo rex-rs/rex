@@ -1,0 +1,16 @@
+[build]
+target = "x86_64-unknown-none"
+
+[target.x86_64-unknown-none]
+linker = "ld.mold"
+rustflags = [
+  "-Zthreads=8",
+  "-Cforce-frame-pointers=y",
+  "-Csymbol-mangling-version=v0",
+  "-Ccodegen-units=1",
+  "-Crelocation-model=pie",
+  "-Crelro-level=full",
+]
+
+[unstable]
+build-std = ["core"]
