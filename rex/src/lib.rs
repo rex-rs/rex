@@ -6,13 +6,7 @@
     core_intrinsics,
     negative_impls
 )]
-#![allow(
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    unused,
-    internal_features
-)]
+#![allow(non_camel_case_types, internal_features)]
 
 pub mod kprobe;
 pub mod map;
@@ -29,16 +23,16 @@ pub mod xdp;
 mod base_helper;
 mod bindings;
 mod debug;
+mod ffi;
+mod log;
 mod panic;
 mod per_cpu;
 mod random32;
-mod stub;
 
 extern crate paste;
 
 use crate::bindings::uapi::linux::bpf::BPF_F_CURRENT_CPU;
 use crate::prog_type::rex_prog;
-use core::panic::PanicInfo;
 pub use rex_macros::*;
 
 use paste::paste;
@@ -68,4 +62,5 @@ define_prog_entry!(xdp);
 define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
+pub use log::rex_trace_printk;
 pub use utils::Result;

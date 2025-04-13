@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
+use async_memcached::AsciiProtocol;
 use clap::ValueEnum;
 use log::{info, trace};
 use serde::{Deserialize, Serialize};

@@ -4,7 +4,7 @@ extern crate rex;
 
 use core::sync::atomic::{AtomicU64, Ordering};
 use rex::pt_regs::PtRegs;
-use rex::{Result, bpf_printk};
+use rex::{Result, rex_printk};
 use rex::{kprobe::*, rex_kprobe};
 
 static ATOM: AtomicU64 = AtomicU64::new(42);
@@ -18,7 +18,7 @@ fn rex_prog1(obj: &kprobe, _ctx: &mut PtRegs) -> Result {
     let val = ATOM.load(Ordering::Relaxed);
     let end = obj.bpf_ktime_get_ns();
 
-    bpf_printk!(obj, c"Time elapsed: %llu %llu", end - start, val);
+    rex_printk!("Time elapsed: {} {}", end - start, val)?;
 
     Ok(0)
 }

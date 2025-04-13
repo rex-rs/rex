@@ -2,8 +2,8 @@
 #![no_main]
 extern crate rex;
 
-use rex::bpf_printk;
 use rex::rex_kprobe;
+use rex::rex_printk;
 // use rex::tracepoint::*;
 use core::hint::black_box;
 use rex::Result;
@@ -36,13 +36,13 @@ fn rex_recursive(obj: &kprobe, ctx: &mut PtRegs) -> Result {
     //     return Err(0);
     // };
 
-    // bpf_printk!(obj, "Received n: %d", n as u64);
+    // rex_printk!("Received n: {}", n)?;
     let start_time: u64 = obj.bpf_ktime_get_ns();
     calculate_tail_fib(n);
     let end_time: u64 = obj.bpf_ktime_get_ns();
-    // bpf_printk!(obj, "Result: %d", result as u64);
+    // rex_printk!("Result: {}", result)?;
 
-    bpf_printk!(obj, c"Time: %llu", end_time - start_time);
+    rex_printk!("Time: {}", end_time - start_time)?;
 
     Ok(0)
 }

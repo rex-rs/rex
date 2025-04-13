@@ -88,6 +88,7 @@
         fakeroot
         findutils
         flex
+        git
         gcc
         getopt
         gnumake
@@ -99,6 +100,7 @@
         xz.dev
         zlib
         zlib.dev
+        bpftools
 
         cargo-pgo
 
@@ -120,7 +122,10 @@
         # llvmPackages.bintools
 
         qemu
-        busybox
+        util-linux
+        hostname
+        sysctl
+
         perf-tools
 
         # for llvm/Demangle/Demangle.h

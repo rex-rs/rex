@@ -1,8 +1,7 @@
 use crate::bindings::uapi::linux::bpf::{bpf_map_type, BPF_PROG_TYPE_KPROBE};
-use crate::map::*;
+use crate::ffi;
 use crate::prog_type::rex_prog;
 use crate::pt_regs::PtRegs;
-use crate::stub;
 use crate::task_struct::TaskStruct;
 use crate::Result;
 
@@ -50,7 +49,7 @@ impl kprobe {
     #[cfg(CONFIG_BPF_KPROBE_OVERRIDE = "y")]
     pub fn bpf_override_return(&self, regs: &mut PtRegs, rc: u64) -> i32 {
         regs.regs.ax = rc;
-        regs.regs.ip = unsafe { stub::just_return_func as *const () as u64 };
+        regs.regs.ip = ffi::just_return_func as *const () as u64;
         0
     }
 

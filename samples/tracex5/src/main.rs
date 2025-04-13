@@ -5,12 +5,12 @@
 extern crate rex;
 
 use rex::Result;
-use rex::bpf_printk;
 use rex::kprobe::*;
 use rex::linux::seccomp::seccomp_data;
 use rex::linux::unistd::*;
 use rex::pt_regs::PtRegs;
 use rex::rex_kprobe;
+use rex::rex_printk;
 
 pub fn func_sys_write(obj: &kprobe, ctx: &PtRegs) -> Result {
     let mut sd: seccomp_data = seccomp_data {
@@ -24,9 +24,8 @@ pub fn func_sys_write(obj: &kprobe, ctx: &PtRegs) -> Result {
     obj.bpf_probe_read_kernel(&mut sd, unsafe_ptr)?;
 
     if sd.args[2] == 512 {
-        bpf_printk!(
-            obj,
-            c"write(fd=%d, buf=%p, size=%d)\n",
+        return rex_printk!(
+            "write(fd={}, buf={:x}, size={})\n",
             sd.args[0],
             sd.args[1],
             sd.args[2]
@@ -47,9 +46,8 @@ pub fn func_sys_read(obj: &kprobe, ctx: &PtRegs) -> Result {
     obj.bpf_probe_read_kernel(&mut sd, unsafe_ptr)?;
 
     if sd.args[2] > 128 && sd.args[2] <= 1024 {
-        bpf_printk!(
-            obj,
-            c"read(fd=%d, buf=%p, size=%d)\n",
+        return rex_printk!(
+            "read(fd={}, buf={:x}, size={})\n",
             sd.args[0],
             sd.args[1],
             sd.args[2]
@@ -58,9 +56,8 @@ pub fn func_sys_read(obj: &kprobe, ctx: &PtRegs) -> Result {
     Ok(0)
 }
 
-pub fn func_sys_mmap(obj: &kprobe, _: &PtRegs) -> Result {
-    bpf_printk!(obj, c"mmap\n");
-    Ok(0)
+pub fn func_sys_mmap(_obj: &kprobe, _: &PtRegs) -> Result {
+    rex_printk!("mmap\n")
 }
 
 #[rex_kprobe(function = "__seccomp_filter")]
@@ -70,12 +67,7 @@ fn rex_prog1(obj: &kprobe, ctx: &mut PtRegs) -> Result {
         __NR_write => func_sys_write(obj, ctx),
         __NR_mmap => func_sys_mmap(obj, ctx),
         __NR_getuid..=__NR_getsid => {
-            bpf_printk!(
-                obj,
-                c"syscall=%d (one of get/set uid/pid/gid)\n",
-                ctx.rdi()
-            );
-            Ok(0)
+            rex_printk!("syscall={} (one of get/set uid/pid/gid)\n", ctx.rdi())
         }
         _ => Ok(0),
     }

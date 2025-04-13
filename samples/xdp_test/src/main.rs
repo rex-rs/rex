@@ -4,7 +4,9 @@
 
 extern crate rex;
 
-use rex::bpf_printk;
+use core::net::Ipv4Addr;
+
+use rex::rex_printk;
 use rex::sched_cls::*;
 use rex::utils::*;
 use rex::xdp::*;
@@ -14,23 +16,15 @@ use rex::{rex_tc, rex_xdp};
 fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {
     let mut ip_header = obj.ip_header(ctx);
 
-    bpf_printk!(
-        obj,
-        c"IP saddr %pi4\n",
-        ip_header.saddr() as *const u32 as u64
-    );
-    bpf_printk!(
-        obj,
-        c"IP daddr %pi4\n",
-        ip_header.daddr() as *const u32 as u64
-    );
+    rex_printk!("IP saddr {}\n", Ipv4Addr::from_bits(*ip_header.saddr()))?;
+    rex_printk!("IP daddr {}\n", Ipv4Addr::from_bits(*ip_header.daddr()))?;
 
     match u8::from_be(ip_header.protocol) as u32 {
         IPPROTO_TCP => {
-            bpf_printk!(obj, c"TCP packet!")
+            rex_printk!("TCP packet!")?;
         }
         IPPROTO_UDP => {
-            bpf_printk!(obj, c"UDP packet!");
+            rex_printk!("UDP packet!")?;
         }
         _ => {}
     };
@@ -42,18 +36,10 @@ fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {
 fn xdp_tx_filter(obj: &sched_cls, skb: &mut __sk_buff) -> Result {
     let mut ip_header = obj.ip_header(skb);
 
-    bpf_printk!(
-        obj,
-        c"IP saddr %pi4\n",
-        ip_header.saddr() as *const u32 as u64
-    );
-    bpf_printk!(
-        obj,
-        c"IP daddr %pi4\n",
-        ip_header.daddr() as *const u32 as u64
-    );
+    rex_printk!("IP saddr {}\n", Ipv4Addr::from_bits(*ip_header.saddr()))?;
+    rex_printk!("IP daddr {}\n", Ipv4Addr::from_bits(*ip_header.daddr()))?;
     if u8::from_be(ip_header.protocol) as u32 == IPPROTO_UDP {
-        bpf_printk!(obj, c"UDP packet!");
+        return rex_printk!("UDP packet!");
     }
 
     Ok(TC_ACT_OK as i32)

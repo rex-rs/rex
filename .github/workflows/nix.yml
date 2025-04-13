@@ -5,11 +5,13 @@ on:
     paths-ignore:
       - docs/**
       - tools/**
+      - README.md
   pull_request:
     branches: [main]
     paths-ignore:
       - docs/**
       - tools/**
+      - README.md
 
 jobs:
   build_and_test:

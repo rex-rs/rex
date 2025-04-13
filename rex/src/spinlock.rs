@@ -1,7 +1,7 @@
 use crate::base_helper::termination_check;
 pub use crate::bindings::uapi::linux::bpf::bpf_spin_lock;
+use crate::ffi;
 use crate::panic::CleanupEntries;
-use crate::stub;
 
 /// An RAII implementation of a "scoped lock" of a bpf spinlock. When this
 /// structure is dropped (falls out of scope), the lock will be unlocked.
@@ -26,7 +26,7 @@ impl<'a> rex_spinlock_guard<'a> {
             );
 
             // Lock
-            unsafe { stub::bpf_spin_lock(lock) };
+            unsafe { ffi::bpf_spin_lock(lock) };
 
             Self { lock, cleanup_idx }
         })
@@ -35,7 +35,7 @@ impl<'a> rex_spinlock_guard<'a> {
     /// Function that unlocks the spinlock, used by cleanup list and drop
     pub(crate) unsafe fn panic_cleanup(lock: *mut ()) {
         unsafe {
-            stub::bpf_spin_unlock(lock as *mut bpf_spin_lock);
+            ffi::bpf_spin_unlock(lock as *mut bpf_spin_lock);
         }
     }
 }
@@ -50,7 +50,7 @@ impl Drop for rex_spinlock_guard<'_> {
             CleanupEntries::deregister_cleanup(self.cleanup_idx);
 
             // Unlock
-            unsafe { stub::bpf_spin_unlock(self.lock) };
+            unsafe { ffi::bpf_spin_unlock(self.lock) };
         })
     }
 }

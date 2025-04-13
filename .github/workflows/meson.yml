@@ -6,12 +6,14 @@ on:
       - docs/**
       - tools/**
       - flake.nix
+      - README.md
   pull_request:
     branches: [main]
     paths-ignore:
       - docs/**
       - tools/**
       - flake.nix
+      - README.md
 
 jobs:
   build_and_test:

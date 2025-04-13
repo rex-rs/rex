@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <linux/unistd.h>
 #include <linux/perf_event.h>
@@ -333,6 +334,9 @@ int main(int argc, char **argv)
 
 	test_bpf_perf_event();
 	error = 0;
+
+	kill(pid, SIGTERM);
+	waitpid(pid, NULL, 0);
 
 cleanup:
 	return error;

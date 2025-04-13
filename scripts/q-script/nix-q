@@ -158,6 +158,8 @@ guest() {
 
 	say modules /lib/modules/$kver $mods_nr modules
 	mount -n -t 9p -o version=9p2000.L,trans=virtio,msize=104857600 /dev/kernel $KERNEL
+        # Create lib/modules if on NixOS
+        mkdir -p /lib/modules
 	mount -n -t tmpfs tmpfs /lib/modules
 	mkdir "/lib/modules/$kver"
 	ln -s $KERNEL "/lib/modules/$kver/source"

@@ -3,11 +3,11 @@
 
 extern crate rex;
 
-use rex::bpf_printk;
 use rex::linux::bpf::*;
 use rex::linux::perf_event::PERF_MAX_STACK_DEPTH;
 use rex::map::*;
 use rex::perf_event::*;
+use rex::rex_printk;
 use rex::utils::copy_cstr_to_array;
 use rex::{rex_map, rex_perf_event, Result};
 
@@ -60,49 +60,40 @@ fn rex_prog1(obj: &perf_event, ctx: &bpf_perf_event_data) -> Result {
 
     key.kernstack = obj
         .bpf_get_stackid_pe(ctx, &stackmap, KERN_STACKID_FLAGS)
-        .map_err(|_| {
-        bpf_printk!(
-            obj,
-            c"CPU-%d period %lld ip %llx",
-            cpu as u64,
+        .or_else(|_| {
+        rex_printk!(
+            "CPU-{} period {} ip {:x}",
+            cpu,
             ctx.sample_period(),
             ctx.regs().rip()
-        );
-        0i32
+        )
     })? as u32;
 
     key.userstack = obj
         .bpf_get_stackid_pe(ctx, &stackmap, USER_STACKID_FLAGS)
-        .map_err(|_| {
-        bpf_printk!(
-            obj,
-            c"CPU-%d period %lld ip %llx",
-            cpu as u64,
+        .or_else(|_| {
+        rex_printk!(
+            "CPU-{} period {} ip {:x}",
+            cpu,
             ctx.sample_period(),
             ctx.regs().rip()
-        );
-        0i32
+        )
     })? as u32;
 
     obj.bpf_perf_prog_read_value(ctx, &mut value_buf)
         .map_or_else(
-            |err| {
-                bpf_printk!(obj, c"Get Time Failed, ErrCode: %d", err as u64);
-                err as u64
-            },
-            |val| {
-                bpf_printk!(
-                    obj,
-                    c"Time Enabled: %llu, Time Running: %llu",
+            |err| rex_printk!("Get Time Failed, ErrCode: {}", err),
+            |_| {
+                rex_printk!(
+                    "Time Enabled: {}, Time Running: {}",
                     value_buf.enabled,
                     value_buf.running
-                );
-                val as u64
+                )
             },
-        );
+        )?;
 
     if ctx.addr() != 0 {
-        bpf_printk!(obj, c"Address recorded on event: %llx", ctx.addr());
+        rex_printk!("Address recorded on event: {:x}", ctx.addr())?;
     }
 
     match obj.bpf_map_lookup_elem(&counts, &key) {

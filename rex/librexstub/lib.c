@@ -36,6 +36,7 @@ KSYM_FUNC(bpf_ringbuf_query)
 KSYM_FUNC(bpf_ktime_get_ns)
 KSYM_FUNC(bpf_ktime_get_boot_ns)
 KSYM_FUNC(bpf_ktime_get_coarse_ns)
+KSYM_FUNC(rex_trace_printk)
 
 // Global variables
 unsigned long jiffies;
@@ -45,3 +46,4 @@ unsigned long rex_stack_ptr;
 void *pcpu_hot;
 unsigned char rex_termination_state;
 unsigned long this_cpu_off;
+char *rex_log_buf;

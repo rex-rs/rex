@@ -23,30 +23,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      # Install Ubuntu dependencies
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get install -y pkg-config libzstd-dev mold binutils memcached
-          sudo systemctl stop memcached
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 19 all
-          sudo update-alternatives --verbose --install /usr/bin/clang clang /usr/bin/clang-19 10000 \
-            --slave /usr/bin/lld lld /usr/bin/lld-19 \
-            --slave /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-19
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: cachix/install-nix-action@v26
+      - uses: cachix/cachix-action@v14
         with:
-          components: rustfmt
-          toolchain: stable
-      - name: Rustfmt Check
-        uses: actions-rust-lang/rustfmt@v1
-        with:
-          manifest-path: ./tools/memcached_benchmark/Cargo.toml
+          name: devenv
+      - name: Install devenv.sh
+        run: nix profile install nixpkgs#devenv
+
+      - name: Build the devenv shell and run any pre-commit hooks
+        run: devenv test
+
       - name: Build
-        run: RUSTFLAGS='-Ctarget-cpu=native -Clinker-plugin-lto -Clink-arg=-flto=thin -Clink-arg=-fuse-ld=mold -Clink-arg=-Wl,-O1 -Clink-arg=-Wl,--as-needed' cargo build -vvv
-      - name: Run tests with debug build
-        run: RUSTFLAGS='-Ctarget-cpu=native -Clinker-plugin-lto -Clink-arg=-flto=thin -Clink-arg=-fuse-ld=mold -Clink-arg=-Wl,-O1 -Clink-arg=-Wl,--as-needed' cargo test --verbose
-      - name: Run tests with release build
-        run: RUSTFLAGS='-Ctarget-cpu=native -Clinker-plugin-lto -Clink-arg=-flto=thin -Clink-arg=-fuse-ld=mold -Clink-arg=-Wl,-O1 -Clink-arg=-Wl,--as-needed' cargo test -r --verbose
+        shell: devenv shell bash -- -e {0}
+        run: |
+          cargo fmt --check --verbose
+          cargo build -r --verbose
+      - name: Run tests
+        shell: devenv shell bash -- -e {0}
+        run: |
+          cargo test --verbose
+          cargo test -r --verbose

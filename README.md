@@ -1,5 +1,3 @@
-# Rex kernel extensions
-
 ```
  ____  _______  __  _____      _                 _
 |  _ \| ____\ \/ / | ____|_  _| |_ ___ _ __  ___(_) ___  _ __  ___
@@ -8,6 +6,12 @@
 |_| \_\_____/_/\_\ |_____/_/\_\\__\___|_| |_|___/_|\___/|_| |_|___/
 
 ```
+
+# Rex kernel extensions
+
+[![CI](https://img.shields.io/github/actions/workflow/status/rex-rs/rex/.github%2Fworkflows%2Fmeson.yml?label=ci)](https://github.com/rex-rs/rex/actions)
+[![Nix](https://img.shields.io/github/actions/workflow/status/rex-rs/rex/.github%2Fworkflows%2Fnix.yml?label=ci-nix)](https://github.com/rex-rs/rex/actions)
+[![Gentoo](./docs/image/gentoo-badge3.svg)](https://www.gentoo.org)
 
 #### Table of Contents
 
@@ -162,5 +166,5 @@ The full implementation of BMC in Rex can be found at
 
 Rex is licensed under the GPLv2 license. The submodules (Linux, Rust, LLVM)
 in this repo are licensed under their own terms. Please see the
-corresponding license file in for more details. Additionally, the memcached
+corresponding license files for more details. Additionally, the memcached
 benchmark is licensed under the MIT license.

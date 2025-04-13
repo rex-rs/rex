@@ -5,11 +5,11 @@
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.git ];
+  packages = with pkgs; [ git mold llvmPackages.clangUseLLVM memcached openssl ];
 
   # https://devenv.sh/languages/
   languages.rust = {
-    channel = "nightly";
+    channel = "stable";
     components = [
       "cargo"
       "rust-src"
@@ -35,6 +35,7 @@
   '';
 
   enterShell = ''
+    export RUSTC_BOOTSTRAP=1
     hello
     git --version
     rustc --version

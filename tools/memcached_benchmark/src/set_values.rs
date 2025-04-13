@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
+use async_memcached::AsciiProtocol;
 use log::info;
 use tokio::{sync::Semaphore, task::JoinSet};
 
@@ -43,8 +44,8 @@ pub(super) async fn set_memcached_value(
                 .await
                 .expect("memcached get command failed");
 
-            let get_value = ret.unwrap();
-            assert_eq!(get_value.data, value_clone.as_bytes());
+            let get_value = ret.unwrap().data.unwrap();
+            assert_eq!(get_value, value_clone.as_bytes());
         });
     }
 
