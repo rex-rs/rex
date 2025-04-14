@@ -1,8 +1,8 @@
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, BPF_PROG_TYPE_TRACEPOINT,
 };
+use crate::ffi;
 use crate::prog_type::rex_prog;
-use crate::stub;
 use crate::task_struct::TaskStruct;
 use crate::utils::{NoRef, PerfEventMaskedCPU, StreamableProgram};
 use crate::{base_helper::termination_check, map::*, to_result, Result};
@@ -112,7 +112,7 @@ impl StreamableProgram for tracepoint {
         let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
         let ctx_ptr = unsafe { ctx.get_ptr() };
         termination_check!(unsafe {
-            to_result!(stub::bpf_perf_event_output_tp(
+            to_result!(ffi::bpf_perf_event_output_tp(
                 ctx_ptr,
                 map_kptr,
                 cpu.masked_cpu,

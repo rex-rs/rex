@@ -4,7 +4,7 @@
 extern crate rex;
 
 use rex::Result;
-use rex::bpf_printk;
+use rex::rex_printk;
 use rex::{rex_tracepoint, rex_map, rex_uprobe};
 use rex::tracepoint::*;
 use rex::kprobe::kprobe;
@@ -45,7 +45,7 @@ fn enter_function(obj: &kprobe, ctx: &mut PtRegs) -> Result {
     let tc = Tracing { status: 0 };
     let key = 0;
     TRACING_STATUS.insert(&key, &tc);
-    bpf_printk!(obj, c"Enter function.\n");
+    rex_printk!("Enter function.\n");
 }
 
 #[rex_uprobe]
@@ -53,7 +53,7 @@ fn exit_function(obj: &kprobe, ctx: &mut PtRegs) -> Result {
     let tc = Tracing { status: 1 };
     let key = 0;
     TRACING_STATUS.insert(&key, &tc);
-    bpf_printk!(obj, c"Exit function.\n");
+    rex_printk!("Exit function.\n");
 }
 
 #[rex_tracepoint(name = "raw_syscalls/sys_enter", tp_type = "RawSyscallsEnter")]
@@ -63,32 +63,32 @@ fn rex_prog1(obj: &tracepoint, ctx: tp_ctx) -> Result {
     let key_trace = 0;
 
     let Some(tc) = TRACING_STATUS.get_mut(&key_trace) else {
-        bpf_printk!(obj, c"Error getting tracing status.\n");
+        rex_printk!("Error getting tracing status.\n");
         return Err(1);
     }
 
     if tc.status == 1 {
-        bpf_printk!(obj, c"Tracing is not active.\n");
+        rex_printk!("Tracing is not active.\n");
         return Err(1);
     }
 
     let Some(task) = obj.bpf_get_current_task() else {
-        bpf_printk!(obj, c"Unable to get current task.\n");
+        rex_printk!("Unable to get current task.\n");
         return Err(1);
     }
 
     let Ok(command) = task.get_comm() else {
-        bpf_printk!(obj, c"Unable to read current program name.\n");
+        rex_printk!("Unable to read current program name.\n");
         return Err(1);
     }
 
     let Some(input_command_raw) = CONFIG_MAP.get_mut(&key_config) else {
-        bpf_printk!(obj, c"Unable to get config.\n");
+        rex_printk!("Unable to get config.\n");
         return Err(1);
     }
 
     let Ok(input_command) = CStr::from_bytes_until_nul(input_command_raw.values) else {
-        bpf_printk!(obj, c"Unable to read input command.\n");
+        rex_printk!("Unable to read input command.\n");
         return Err(1);
     }
 
@@ -105,7 +105,7 @@ fn rex_prog1(obj: &tracepoint, ctx: tp_ctx) -> Result {
 
     EVENTS.output(obj, ctx, data, PerfEventMaskedCPU::current_cpu());
 
-    bpf_printk!(obj, c"Sending syscall id %llu.\n", id as u64);
+    rex_printk!("Sending syscall id {}.\n", id);
 
     Ok(0)
 }
