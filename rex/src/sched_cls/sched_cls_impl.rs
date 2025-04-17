@@ -1,8 +1,7 @@
-use crate::debug::printk;
-use crate::stub;
+use crate::ffi;
 
 use crate::bindings::linux::kernel::{
-    ethhdr, iphdr, net_device, sk_buff, sock, tcphdr, udphdr,
+    ethhdr, iphdr, sk_buff, sock, tcphdr, udphdr,
 };
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
 pub use crate::bindings::uapi::linux::bpf::BPF_PROG_TYPE_SCHED_CLS;
@@ -13,8 +12,7 @@ use crate::prog_type::rex_prog;
 use crate::utils::*;
 
 use crate::base_helper::termination_check;
-use crate::map::*;
-use core::ffi::{c_char, c_uchar, c_uint, c_void};
+use core::ffi::{c_char, c_uchar};
 use core::{mem, slice};
 
 pub struct __sk_buff<'a> {
@@ -105,28 +103,26 @@ impl<'a> __sk_buff<'a> {
     // TODO: may need to update based on __sk_buff
     pub fn vlan_tci(&self) -> u16 {
         unsafe {
-            (self
-                .kptr
+            self.kptr
                 .__bindgen_anon_4
                 .__bindgen_anon_1
                 .as_ref()
                 .__bindgen_anon_2
                 .__bindgen_anon_1
-                .vlan_tci)
+                .vlan_tci
         }
     }
 
     #[inline(always)]
     pub fn vlan_proto(&self) -> u16be {
         u16be(unsafe {
-            (self
-                .kptr
+            self.kptr
                 .__bindgen_anon_4
                 .__bindgen_anon_1
                 .as_ref()
                 .__bindgen_anon_2
                 .__bindgen_anon_1
-                .vlan_proto)
+                .vlan_proto
         })
     }
 
@@ -207,11 +203,9 @@ impl sched_cls {
         &self,
         skb: &'b mut __sk_buff,
     ) -> AlignedMut<'b, ethhdr> {
-        unsafe {
-            convert_slice_to_struct_mut::<ethhdr>(
-                &mut skb.data_slice[0..mem::size_of::<ethhdr>()],
-            )
-        }
+        convert_slice_to_struct_mut::<ethhdr>(
+            &mut skb.data_slice[0..mem::size_of::<ethhdr>()],
+        )
     }
 
     #[inline(always)]
@@ -223,11 +217,7 @@ impl sched_cls {
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<udphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<udphdr>(
-                &mut skb.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<udphdr>(&mut skb.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -239,11 +229,7 @@ impl sched_cls {
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<tcphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<tcphdr>(
-                &mut skb.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<tcphdr>(&mut skb.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -255,11 +241,7 @@ impl sched_cls {
         let begin = mem::size_of::<ethhdr>();
         let end = mem::size_of::<iphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<iphdr>(
-                &mut skb.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<iphdr>(&mut skb.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -270,7 +252,7 @@ impl sched_cls {
         flags: u64,
     ) -> Result {
         let ret = termination_check!(unsafe {
-            stub::bpf_clone_redirect(skb.kptr, ifindex, flags)
+            ffi::bpf_clone_redirect(skb.kptr, ifindex, flags)
         });
 
         if ret != 0 {
@@ -295,8 +277,6 @@ impl sched_cls {
     #[inline(always)]
     fn convert_ctx(&self, ctx: *mut ()) -> __sk_buff {
         let kptr = unsafe { &mut *(ctx as *mut sk_buff) };
-
-        let data = kptr.data as u32;
 
         // NOTE: not support jumobo frame yet with non-linear sk_buff
         let data_length = (kptr.len - kptr.data_len) as usize;

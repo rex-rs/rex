@@ -191,8 +191,8 @@ fn map_test_ringbuf(obj: &tracepoint) -> Result {
 }
 */
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint]
+fn rex_prog1(obj: &tracepoint, _: &'static SyscallsEnterDupCtx) -> Result {
     map_test_hash(obj)
         .or_else(|e| rex_printk!("map_test failed with {}.\n", e))?;
     map_test_array(obj)

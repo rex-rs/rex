@@ -100,6 +100,7 @@
         xz.dev
         zlib
         zlib.dev
+        bpftools
 
         cargo-pgo
 

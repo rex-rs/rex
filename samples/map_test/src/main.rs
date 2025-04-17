@@ -92,8 +92,8 @@ fn map_test2(obj: &tracepoint) -> Result {
     Ok(0)
 }
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint]
+fn rex_prog1(obj: &tracepoint, _: &'static SyscallsEnterDupCtx) -> Result {
     map_test1(obj)
         .or_else(|e| rex_printk!("map_test1 failed with {}.\n", e))?;
     map_test2(obj).or_else(|e| rex_printk!("map_test2 failed with {}.\n", e))

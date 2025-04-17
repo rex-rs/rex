@@ -1,5 +1,5 @@
 use crate::bindings::linux::kernel::task_struct;
-use crate::stub;
+use crate::ffi;
 
 pub(crate) trait PerCPURead {
     unsafe fn this_cpu_read(addr: *const Self) -> Self;
@@ -95,7 +95,7 @@ macro_rules! impl_pcpu_read_ptr {
 
 impl_pcpu_read_integral!(u64 i64 u32 i32 u16 i16);
 impl_pcpu_read_byte!(u8 i8);
-/// Mut: we have the CPU and assume no nesting
+// Mut: we have the CPU and assume no nesting
 impl_pcpu_read_ptr!(const mut);
 
 /// For values of per-cpu variables
@@ -106,32 +106,32 @@ pub(crate) unsafe fn this_cpu_read<T: PerCPURead>(pcp_addr: *const T) -> T {
 
 /// For addresses of per-cpu variables
 /// This is more expensive (in terms of # of insns)
+#[allow(dead_code)]
 #[inline(always)]
 pub unsafe fn this_cpu_ptr<T>(pcp_addr: *const T) -> *const T {
     unsafe {
-        pcp_addr.byte_add(this_cpu_read(&raw const stub::this_cpu_off) as usize)
+        pcp_addr.byte_add(this_cpu_read(&raw const ffi::this_cpu_off) as usize)
     }
 }
 
+#[inline(always)]
 pub unsafe fn this_cpu_ptr_mut<T>(pcp_addr: *mut T) -> *mut T {
     unsafe {
-        pcp_addr.byte_add(this_cpu_read(&raw const stub::this_cpu_off) as usize)
+        pcp_addr.byte_add(this_cpu_read(&raw const ffi::this_cpu_off) as usize)
     }
 }
 
 #[inline(always)]
 pub(crate) fn current_task() -> *const *const task_struct {
     unsafe {
-        &raw const stub::pcpu_hot
-            .__bindgen_anon_1
-            .__bindgen_anon_1
-            .current_task as *const *const task_struct
+        &raw const ffi::pcpu_hot.__bindgen_anon_1.__bindgen_anon_1.current_task
+            as *const *const task_struct
     }
 }
 
 #[inline(always)]
 pub(crate) fn cpu_number() -> *const i32 {
     unsafe {
-        &raw const stub::pcpu_hot.__bindgen_anon_1.__bindgen_anon_1.cpu_number
+        &raw const ffi::pcpu_hot.__bindgen_anon_1.__bindgen_anon_1.cpu_number
     }
 }

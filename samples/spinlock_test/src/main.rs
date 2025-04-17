@@ -38,8 +38,8 @@ fn test2(obj: &tracepoint) {
     }
 }
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint]
+fn rex_prog1(obj: &tracepoint, _: &'static SyscallsEnterDupCtx) -> Result {
     test1(obj);
     test2(obj);
     Ok(0)

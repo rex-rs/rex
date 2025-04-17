@@ -2,7 +2,6 @@ use crate::bindings::linux::kernel::task_struct;
 use crate::bindings::uapi::linux::errno::EINVAL;
 use crate::per_cpu::{current_task, this_cpu_read};
 use crate::pt_regs::PtRegs;
-use crate::stub;
 
 // Bindgen has problem generating these constants
 const TOP_OF_KERNEL_STACK_PADDING: u64 = 0;
@@ -69,7 +68,7 @@ impl TaskStruct {
         // highest address of the stack pages
         let stack_top =
             self.kptr.stack as u64 + THREAD_SIZE - TOP_OF_KERNEL_STACK_PADDING;
-        let reg_addr = (stack_top - core::mem::size_of::<PtRegs>() as u64);
+        let reg_addr = stack_top - core::mem::size_of::<PtRegs>() as u64;
         // The pt_regs should always be on the top of the stack
         unsafe { &*(reg_addr as *const PtRegs) }
     }

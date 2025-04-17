@@ -3,9 +3,9 @@
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
+use crate::ffi;
 use crate::log::LogBuf;
 use crate::per_cpu::this_cpu_ptr_mut;
-use crate::stub;
 
 /// Needs to match the kernel side per-cpu definition
 pub(crate) const ENTRIES_SIZE: usize = 64;
@@ -75,9 +75,8 @@ impl<'a> CleanupEntries<'a> {
     fn this_cpu_cleanup_entries() -> CleanupEntries<'a> {
         let entries: &mut [CleanupEntry];
         unsafe {
-            entries =
-                &mut *this_cpu_ptr_mut(&raw mut stub::rex_cleanup_entries)
-                    .as_mut_slice();
+            entries = &mut *this_cpu_ptr_mut(&raw mut ffi::rex_cleanup_entries)
+                .as_mut_slice();
         }
         Self { entries }
     }
@@ -113,14 +112,14 @@ impl<'a> CleanupEntries<'a> {
     /// This function is called by the object drop handler. It invalidates the
     /// entry corresponding to the object.
     pub(crate) fn deregister_cleanup(idx: usize) {
-        let mut entries = Self::this_cpu_cleanup_entries();
+        let entries = Self::this_cpu_cleanup_entries();
         entries.entries[idx].valid = 0;
     }
 
     /// This function is called on panic to cleanup everything on the current
     /// CPU. It **must** not cause another panic
     pub(crate) unsafe fn cleanup_all() {
-        let mut entries = Self::this_cpu_cleanup_entries();
+        let entries = Self::this_cpu_cleanup_entries();
         for entry in entries.entries.iter_mut() {
             unsafe {
                 entry.cleanup();
@@ -146,7 +145,7 @@ unsafe fn __rex_check_stack() {
             "ja 2f",
             "call __rex_handle_stack_overflow",
             "2:",
-            in(reg) &stub::rex_stack_ptr as *const u64 as u64,
+            in(reg) &ffi::rex_stack_ptr as *const u64 as u64,
             lateout(reg) _,
         );
     }
@@ -168,7 +167,7 @@ fn panic(info: &PanicInfo) -> ! {
     // Set the termination flag
     unsafe {
         let termination_flag: *mut u8 = crate::per_cpu::this_cpu_ptr_mut(
-            &raw mut crate::stub::rex_termination_state,
+            &raw mut crate::ffi::rex_termination_state,
         );
         *termination_flag = 1;
     };
@@ -177,8 +176,10 @@ fn panic(info: &PanicInfo) -> ! {
 
     let mut buf = LogBuf::new();
     if write!(&mut buf, "{}", info).is_err() {
-        write!(&mut buf, "unknown rust panic");
+        buf.reset();
+        // This string always fits in the buffer, so we ignore the Result
+        write!(&mut buf, "unknown rust panic").ok();
     }
 
-    unsafe { stub::rex_landingpad() }
+    unsafe { ffi::rex_landingpad() }
 }

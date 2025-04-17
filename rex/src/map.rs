@@ -1,4 +1,4 @@
-use crate::utils::{to_result, NoRef, Result};
+use crate::utils::{NoRef, Result};
 use crate::{
     base_helper::{
         bpf_map_delete_elem,
@@ -13,9 +13,7 @@ use crate::{
     linux::bpf::{
         bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY,
         BPF_MAP_TYPE_HASH, BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_QUEUE,
-        BPF_MAP_TYPE_RINGBUF, BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE,
-        BPF_NOEXIST, BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS, BPF_RB_PROD_POS,
-        BPF_RB_RING_SIZE,
+        BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
     },
 };
 use core::{marker::PhantomData, mem, ptr};

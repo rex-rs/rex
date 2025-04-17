@@ -1,16 +1,13 @@
-use crate::stub;
+use crate::ffi;
 
 use crate::base_helper::termination_check;
-use crate::bindings::linux::kernel::iphdr__bindgen_ty_1__bindgen_ty_1;
 pub use crate::bindings::linux::kernel::{
     ethhdr, iphdr, tcphdr, udphdr, xdp_buff,
 };
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
-use crate::debug::printk;
-use crate::map::*;
 use crate::prog_type::rex_prog;
 use crate::utils::*;
-use core::ffi::{c_uchar, c_uint, c_void};
+use core::ffi::c_uchar;
 use core::{mem, mem::size_of, slice};
 
 // expose the following constants to the user
@@ -33,7 +30,6 @@ impl iphdr {
 #[inline(always)]
 pub fn compute_ip_checksum(ip_header: &mut iphdr) -> u16 {
     let mut sum: u32 = 0;
-    let mut checksum: u16 = 0;
     ip_header.check = 0;
 
     let count = size_of::<iphdr>() >> 1;
@@ -142,11 +138,7 @@ impl xdp {
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<tcphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<tcphdr>(
-                &mut ctx.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<tcphdr>(&mut ctx.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -158,11 +150,7 @@ impl xdp {
         let begin = mem::size_of::<ethhdr>() + mem::size_of::<iphdr>();
         let end = mem::size_of::<udphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<udphdr>(
-                &mut ctx.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<udphdr>(&mut ctx.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -171,11 +159,7 @@ impl xdp {
         let begin = mem::size_of::<ethhdr>();
         let end = mem::size_of::<iphdr>() + begin;
 
-        unsafe {
-            convert_slice_to_struct_mut::<iphdr>(
-                &mut ctx.data_slice[begin..end],
-            )
-        }
+        convert_slice_to_struct_mut::<iphdr>(&mut ctx.data_slice[begin..end])
     }
 
     #[inline(always)]
@@ -183,23 +167,21 @@ impl xdp {
         &self,
         ctx: &'b mut xdp_md,
     ) -> AlignedMut<'b, ethhdr> {
-        unsafe {
-            convert_slice_to_struct_mut::<ethhdr>(
-                &mut ctx.data_slice[0..mem::size_of::<ethhdr>()],
-            )
-        }
+        convert_slice_to_struct_mut::<ethhdr>(
+            &mut ctx.data_slice[0..mem::size_of::<ethhdr>()],
+        )
     }
 
     // FIX: update based on xdp_md to convert to xdp_buff
     // pub fn bpf_xdp_adjust_head(&self, xdp: &mut xdp_buff, offset: i32) -> i32
-    // {     unsafe { stub::bpf_xdp_adjust_head(xdp, offset) }
+    // {     unsafe { ffi::bpf_xdp_adjust_head(xdp, offset) }
     // }
 
     // WARN: this function is unsafe
     #[inline(always)]
     pub fn bpf_xdp_adjust_tail(&self, ctx: &mut xdp_md, offset: i32) -> Result {
         let ret = termination_check!(unsafe {
-            stub::bpf_xdp_adjust_tail(ctx.kptr, offset)
+            ffi::bpf_xdp_adjust_tail(ctx.kptr, offset)
         });
         if ret != 0 {
             return Err(ret);
