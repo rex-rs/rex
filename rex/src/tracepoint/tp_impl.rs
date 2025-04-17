@@ -12,11 +12,15 @@ pub enum tp_type {
     Void,
     SyscallsEnterOpen,
     SyscallsExitOpen,
+    RawSyscallsEnter,
+    RawSyscallsExit,
 }
 pub enum tp_ctx {
     Void,
     SyscallsEnterOpen(&'static SyscallsEnterOpenArgs),
     SyscallsExitOpen(&'static SyscallsExitOpenArgs),
+    RawSyscallsEnter(&'static RawSyscallEnterArgs),
+    RawSyscallsExit(&'static RawSyscallExitArgs),
 }
 
 /// First 3 fields should always be rtti, prog_fn, and name
@@ -60,6 +64,12 @@ impl tracepoint {
             }),
             tp_type::SyscallsExitOpen => tp_ctx::SyscallsExitOpen(unsafe {
                 &*(ctx as *mut SyscallsExitOpenArgs)
+            }),
+            tp_type::RawSyscallsEnter => tp_ctx::RawSyscallsEnter(unsafe {
+                &*(ctx as *mut RawSyscallEnterArgs)
+            }),
+            tp_type::RawSyscallsExit => tp_ctx::RawSyscallsExit(unsafe {
+                &*(ctx as *mut RawSyscallExitArgs)
             }),
         }
     }

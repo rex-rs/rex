@@ -277,7 +277,7 @@ eval \$(resize)
 EOF
 
 	cd $KERNEL
-
+    
 	if [ -n "$ARGS" ]; then
 		say non-interactive bash script
 		setsid bash -l -c "$ARGS"

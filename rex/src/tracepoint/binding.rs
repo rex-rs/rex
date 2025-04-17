@@ -15,3 +15,27 @@ pub struct SyscallsExitOpenArgs {
     pub syscall_nr: i64,
     pub ret: i64,
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RawSyscallEnterArgs {
+    pub common_type: u16,
+    pub common_flags: u8,
+    pub common_preempt_count: u8,
+    pub common_pid: i32,
+
+    pub id: i64,
+    pub args: [u64; 6],
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RawSyscallExitArgs {
+    pub common_type: u16,
+    pub common_flags: u8,
+    pub common_preempt_count: u8,
+    pub common_pid: i32,
+
+    pub id: i64,
+    pub ret: i64,
+}
