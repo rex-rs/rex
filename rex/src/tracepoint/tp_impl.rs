@@ -23,7 +23,6 @@ pub enum tp_ctx {
     RawSyscallsExit(&'static RawSyscallExitArgs),
 }
 
-
 /// First 3 fields should always be rtti, prog_fn, and name
 ///
 /// rtti should be u64, therefore after compiling the
