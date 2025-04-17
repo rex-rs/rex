@@ -58,6 +58,28 @@ impl TracePoint {
         let prog_ident =
             format_ident!("PROG_{}", fn_name.to_string().to_uppercase());
 
+
+        let attached_name = format!(
+            "rex/tracepoint/{}",
+            self.name.as_ref().expect_or_abort(
+                "Please provide valid tracepoint attached point"
+            )
+        );
+
+        let tp_type_str = self
+            .tp_type
+            .as_ref()
+            .expect_or_abort("Please provide valid tracepoint attached point")
+            .as_str();
+
+        let tp_type = match tp_type_str {
+            "Void" => quote!(tp_type::Void),
+            "SyscallsEnterOpen" => quote!(tp_type::SyscallsExitOpen),
+            "SyscallsExitOpen" => quote!(tp_type::SyscallsExitOpen),
+            "RawSyscallsEnter" => quote!(tp_type::RawSyscallsEnter),
+            "RawSyscallsExit" => quote!(tp_type::RawSyscallsExit),
+            _ => panic!("Please provide valid tp_type"),
+
         let hook_point_name = match context_type.to_string().as_str() {
             "SyscallsEnterOpenCtx" => "syscalls/sys_enter_open",
             "SyscallsEnterOpenatCtx" => "syscalls/sys_enter_openat",

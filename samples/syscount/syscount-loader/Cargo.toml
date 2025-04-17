@@ -1,0 +1,12 @@
+[package]
+name = "syscount-loader"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.3", features = ["derive"] }
+libc = "0.2"
+signal-hook = "0.3"
+anyhow = "1.0"
+[build-dependencies]
+cc = "1.0"

@@ -1,10 +1,11 @@
 [workspace]
 members = [
-	# rex lib
-	"rex",
+    # rex lib
+    "rex",
 
-	# macros
-	"rex-macros",
+    # macros
+    "rex-macros",
+
 ]
 
 resolver = "2"
