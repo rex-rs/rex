@@ -34,9 +34,9 @@ standard kernel build dependencies.
 Clone this repo and its submodules:
 
 ```bash
-git clone https://github.com/rex-rs/rex.git
+git clone https://github.com/rex-rs/rex.git rex-kernel
 cd rex-kernel
-git submodule update --init --recursive --progress
+git submodule update --init --progress
 ```
 
 If you are using Nix, the following additional step is required.

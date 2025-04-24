@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
 use proc_macro_error::abort;
-use syn::{parse_str, spanned::Spanned, Expr, ExprAssign, Lit, LitStr, Result};
+use syn::spanned::Spanned;
+use syn::{parse_str, Expr, ExprAssign, Lit, LitStr, Result};
 
 macro_rules! pop_string_args {
     ($self:expr, $key:expr) => {

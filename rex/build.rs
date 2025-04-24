@@ -1,11 +1,10 @@
 #![feature(exit_status_error)]
 
-use std::env;
-use std::fs;
 use std::io::Result;
 use std::path::Path;
 use std::process::Command;
 use std::string::String;
+use std::{env, fs};
 
 fn main() -> Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();

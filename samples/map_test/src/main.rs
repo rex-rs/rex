@@ -5,9 +5,8 @@ extern crate rex;
 
 use rex::linux::bpf::BPF_ANY;
 use rex::map::*;
-use rex::rex_tracepoint;
 use rex::tracepoint::*;
-use rex::{Result, rex_map, rex_printk};
+use rex::{Result, rex_map, rex_printk, rex_tracepoint};
 
 #[rex_map]
 static MAP_HASH: RexHashMap<u32, i64> = RexHashMap::new(1024, 0);
@@ -92,8 +91,8 @@ fn map_test2(obj: &tracepoint) -> Result {
     Ok(0)
 }
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint]
+fn rex_prog1(obj: &tracepoint, _: &'static SyscallsEnterDupCtx) -> Result {
     map_test1(obj)
         .or_else(|e| rex_printk!("map_test1 failed with {}.\n", e))?;
     map_test2(obj).or_else(|e| rex_printk!("map_test2 failed with {}.\n", e))

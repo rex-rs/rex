@@ -1,20 +1,20 @@
-use crate::ffi;
+use core::ffi::c_uchar;
+use core::mem::size_of;
+use core::{mem, slice};
 
 use crate::base_helper::termination_check;
 pub use crate::bindings::linux::kernel::{
     ethhdr, iphdr, tcphdr, udphdr, xdp_buff,
 };
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
-use crate::prog_type::rex_prog;
-use crate::utils::*;
-use core::ffi::c_uchar;
-use core::{mem, mem::size_of, slice};
-
 // expose the following constants to the user
 pub use crate::bindings::uapi::linux::bpf::{
     BPF_PROG_TYPE_XDP, XDP_ABORTED, XDP_DROP, XDP_PASS, XDP_REDIRECT, XDP_TX,
 };
 pub use crate::bindings::uapi::linux::r#in::{IPPROTO_TCP, IPPROTO_UDP};
+use crate::ffi;
+use crate::prog_type::rex_prog;
+use crate::utils::*;
 
 impl iphdr {
     #[inline(always)]

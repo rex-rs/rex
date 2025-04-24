@@ -1,5 +1,7 @@
-use crate::ffi;
+use core::ffi::{c_char, c_uchar};
+use core::{mem, slice};
 
+use crate::base_helper::termination_check;
 use crate::bindings::linux::kernel::{
     ethhdr, iphdr, sk_buff, sock, tcphdr, udphdr,
 };
@@ -8,12 +10,9 @@ pub use crate::bindings::uapi::linux::bpf::BPF_PROG_TYPE_SCHED_CLS;
 pub use crate::bindings::uapi::linux::pkt_cls::{
     TC_ACT_OK, TC_ACT_REDIRECT, TC_ACT_SHOT,
 };
+use crate::ffi;
 use crate::prog_type::rex_prog;
 use crate::utils::*;
-
-use crate::base_helper::termination_check;
-use core::ffi::{c_char, c_uchar};
-use core::{mem, slice};
 
 pub struct __sk_buff<'a> {
     pub data_slice: &'a mut [c_uchar],

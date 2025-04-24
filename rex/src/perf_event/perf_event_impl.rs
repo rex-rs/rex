@@ -1,10 +1,10 @@
-use crate::bindings::linux::kernel::bpf_perf_event_data_kern;
+use core::intrinsics::unlikely;
 
+use crate::base_helper::termination_check;
+use crate::bindings::linux::kernel::bpf_perf_event_data_kern;
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, bpf_perf_event_value, BPF_PROG_TYPE_PERF_EVENT,
 };
-
-use crate::base_helper::termination_check;
 use crate::ffi;
 use crate::linux::errno::EINVAL;
 use crate::map::*;
@@ -12,8 +12,6 @@ use crate::prog_type::rex_prog;
 use crate::pt_regs::PtRegs;
 use crate::task_struct::TaskStruct;
 use crate::utils::{to_result, NoRef, Result};
-
-use core::intrinsics::unlikely;
 
 #[repr(transparent)]
 pub struct bpf_perf_event_data {

@@ -1,14 +1,15 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, atomic::*},
-};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::*;
 
 use anyhow::Result;
 use async_memcached::AsciiProtocol;
 use clap::ValueEnum;
 use log::{info, trace};
 use serde::{Deserialize, Serialize};
-use tokio::{net::UdpSocket, sync::mpsc, time::timeout};
+use tokio::net::UdpSocket;
+use tokio::sync::mpsc;
+use tokio::time::timeout;
 use tokio_util::task::TaskTracker;
 
 use crate::{BUFFER_SIZE, TIMEOUT_COUNTER};

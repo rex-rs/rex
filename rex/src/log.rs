@@ -1,5 +1,6 @@
 use core::fmt::{self, Write};
 
+use crate::base_helper::termination_check;
 use crate::bindings::uapi::linux::errno::E2BIG;
 use crate::ffi;
 use crate::per_cpu::this_cpu_ptr_mut;
@@ -56,9 +57,7 @@ impl Write for LogBuf {
 pub fn rex_trace_printk(args: fmt::Arguments<'_>) -> crate::Result {
     // Format and write message to the per-cpu buf, then print it out
     write!(&mut LogBuf::new(), "{}", args).map_err(|_| -(E2BIG as i32))?;
-    unsafe {
-        ffi::rex_trace_printk();
-    }
+    termination_check!(unsafe { ffi::rex_trace_printk() });
 
     Ok(0)
 }

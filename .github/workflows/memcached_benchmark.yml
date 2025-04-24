@@ -1,6 +1,7 @@
 name: memcached_benchmark
 
 on:
+  merge_group:
   push:
     branches: [main, ci]
     paths:

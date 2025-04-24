@@ -32,10 +32,10 @@ mod random32;
 extern crate paste;
 
 use crate::bindings::uapi::linux::bpf::BPF_F_CURRENT_CPU;
-use crate::prog_type::rex_prog;
+use paste::paste;
 pub use rex_macros::*;
 
-use paste::paste;
+use crate::prog_type::rex_prog;
 
 #[cfg(not(CONFIG_KALLSYMS_ALL = "y"))]
 compile_error!("CONFIG_KALLSYMS_ALL is required for rex");

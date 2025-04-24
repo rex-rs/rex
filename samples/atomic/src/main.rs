@@ -3,9 +3,10 @@
 extern crate rex;
 
 use core::sync::atomic::{AtomicU64, Ordering};
+
+use rex::kprobe::*;
 use rex::pt_regs::PtRegs;
-use rex::{Result, rex_printk};
-use rex::{kprobe::*, rex_kprobe};
+use rex::{Result, rex_kprobe, rex_printk};
 
 static ATOM: AtomicU64 = AtomicU64::new(42);
 

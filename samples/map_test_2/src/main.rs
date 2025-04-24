@@ -3,10 +3,12 @@
 
 extern crate rex;
 
+use core::mem;
+
 use rex::map::*;
-use rex::rex_tracepoint;
 use rex::tracepoint::*;
-use rex::{Result, rex_map, rex_printk};
+use rex::utils::convert_slice_to_struct_mut;
+use rex::{Result, rex_map, rex_printk, rex_tracepoint};
 
 #[rex_map]
 static MAP_HASH: RexHashMap<u32, i64> = RexHashMap::new(1024, 0);
@@ -20,8 +22,8 @@ static STACK: RexStack<i64> = RexStack::new(256, 0);
 #[rex_map]
 static QUEUE: RexQueue<i64> = RexQueue::new(256, 0);
 
-// #[rex_map]
-// static RINGBUF: IURingBuf = IURingBuf::new(4096, 0);
+#[rex_map]
+static RINGBUF: RexRingBuf = RexRingBuf::new(4096, 0);
 
 fn map_test_hash(obj: &tracepoint) -> Result {
     let key: u32 = 0;
@@ -163,7 +165,6 @@ fn map_test_queue(obj: &tracepoint) -> Result {
     Ok(0)
 }
 
-/*
 fn map_test_ringbuf(obj: &tracepoint) -> Result {
     rex_printk!("Map Testing Ring Buffer Start\n")?;
     let pid = if let Some(task) = obj.bpf_get_current_task() {
@@ -173,9 +174,12 @@ fn map_test_ringbuf(obj: &tracepoint) -> Result {
     };
     rex_printk!("Rust program triggered from PID {}\n", pid)?;
 
-    rex_printk!("Available bytes in ringbuf: {}\n", RINGBUF.available_bytes().unwrap())?;
+    rex_printk!(
+        "Available bytes in ringbuf: {}\n",
+        RINGBUF.available_bytes().unwrap()
+    )?;
 
-    let entry = match RINGBUF.reserve::<i64>(true, pid as i64) {
+    let mut entry = match RINGBUF.reserve(mem::size_of::<i64>()) {
         None => {
             rex_printk!("Unable to reserve ringbuf.\n")?;
             return Err(0);
@@ -183,25 +187,28 @@ fn map_test_ringbuf(obj: &tracepoint) -> Result {
         Some(entry) => entry,
     };
 
-    entry.submit();
+    *convert_slice_to_struct_mut::<i64>(&mut entry) = pid as i64;
 
-    rex_printk!("Available bytes in ringbuf: {}\n", RINGBUF.available_bytes().unwrap())?;
+    entry.submit(0);
+
+    rex_printk!(
+        "Available bytes in ringbuf: {}\n",
+        RINGBUF.available_bytes().unwrap()
+    )?;
 
     Ok(0)
 }
-*/
 
-#[rex_tracepoint(name = "syscalls/sys_enter_dup", tp_type = "Void")]
-fn rex_prog1(obj: &tracepoint, _: tp_ctx) -> Result {
+#[rex_tracepoint]
+fn rex_prog1(obj: &tracepoint, _: &'static SyscallsEnterDupCtx) -> Result {
     map_test_hash(obj)
         .or_else(|e| rex_printk!("map_test failed with {}.\n", e))?;
     map_test_array(obj)
         .or_else(|e| rex_printk!("map_test failed with {}.\n", e))?;
     map_test_stack(obj)
         .or_else(|e| rex_printk!("map_test failed with {}.\n", e))?;
-    // map_test_ringbuf(obj).or_else(|e| {
-    //     rex_printk!("map_test2 failed with {}.\n", e)
-    // })?;
+    map_test_ringbuf(obj)
+        .or_else(|e| rex_printk!("map_test2 failed with {}.\n", e))?;
     map_test_queue(obj)
         .or_else(|e| rex_printk!("map_test failed with {}.\n", e))
 }

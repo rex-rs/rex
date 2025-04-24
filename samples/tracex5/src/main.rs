@@ -4,13 +4,11 @@
 
 extern crate rex;
 
-use rex::Result;
 use rex::kprobe::*;
 use rex::linux::seccomp::seccomp_data;
 use rex::linux::unistd::*;
 use rex::pt_regs::PtRegs;
-use rex::rex_kprobe;
-use rex::rex_printk;
+use rex::{Result, rex_kprobe, rex_printk};
 
 pub fn func_sys_write(obj: &kprobe, ctx: &PtRegs) -> Result {
     let mut sd: seccomp_data = seccomp_data {

@@ -1,5 +1,6 @@
-use crate::bindings::linux::kernel::pt_regs;
 use paste::paste;
+
+use crate::bindings::linux::kernel::pt_regs;
 
 /// Transparently wraps around the kernel-internal `struct pt_regs` and make the
 /// fields read-only to prevent user-defined code from modifying the registers

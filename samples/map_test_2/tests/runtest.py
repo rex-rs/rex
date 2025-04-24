@@ -61,7 +61,7 @@ def capture_output() -> bool:
         test_title = re.findall(r"Map Testing Hash Start with key 0", std_out, re.M)
         re_match = re.findall(r"Rust program triggered from PID (\d+)", std_out, re.M)
         print(std_out)
-        if len(re_match) == 4 and len(test_title) == 1:
+        if len(re_match) == 5 and len(test_title) == 1:
             pid = re_match[0]
             print(pid)
             map_match = re.findall(r"Found Val={}.".format(pid), std_out, re.M)
@@ -69,12 +69,13 @@ def capture_output() -> bool:
             stack_match_2 = re.findall(r"Next top of stack: {}.".format(pid), std_out, re.M)
             queue_match_1 = re.findall(r"Front of queue: {}.".format(pid), std_out, re.M)
             queue_match_2 = re.findall(r"Next front of queue: {}.".format(int(pid) + 1), std_out, re.M)
+            ringbuf_match = re.findall(r"Available bytes in ringbuf", std_out, re.M)
             print(map_match)
             print(stack_match_1)
             print(stack_match_2)
             print(queue_match_1)
             print(queue_match_2)
-            if len(map_match) == 2 and stack_match_1 and stack_match_2 and queue_match_1 and queue_match_2:
+            if len(map_match) == 2 and stack_match_1 and stack_match_2 and queue_match_1 and queue_match_2 and len(ringbuf_match) == 2:
                 print("Success")
                 return True
 

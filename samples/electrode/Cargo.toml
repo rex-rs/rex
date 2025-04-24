@@ -1,0 +1,30 @@
+[package]
+name = "electrode"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dependencies.rex]
+path = "../../rex"
+
+[lints.clippy]
+disallowed_methods = "forbid"
+disallowed_types = "forbid"
+
+[lints.rust]
+incomplete_features = "forbid"
+internal_features = "forbid"
+unsafe_code = "forbid"
+unstable_features = "forbid"
+
+[profile.dev]
+panic = "abort"
+debug = false
+
+[profile.release]
+panic = "abort"
+debug = false
+lto = true

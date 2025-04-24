@@ -6,11 +6,10 @@ extern crate rex;
 
 use core::net::Ipv4Addr;
 
-use rex::rex_printk;
 use rex::sched_cls::*;
 use rex::utils::*;
 use rex::xdp::*;
-use rex::{rex_tc, rex_xdp};
+use rex::{rex_printk, rex_tc, rex_xdp};
 
 #[rex_xdp]
 fn xdp_rx_filter(obj: &xdp, ctx: &mut xdp_md) -> Result {

@@ -6,11 +6,10 @@ mod fs;
 mod get_values;
 mod set_values;
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, atomic::*},
-    vec,
-};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::*;
+use std::vec;
 
 use anyhow::{Result, anyhow};
 use clap::Parser;

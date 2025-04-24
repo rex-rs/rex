@@ -1,4 +1,20 @@
+use core::intrinsics::unlikely;
+use core::marker::PhantomData;
+use core::ops::{Deref, DerefMut};
+use core::{mem, ptr, slice};
+
+use crate::base_helper::{
+    bpf_map_delete_elem, bpf_map_lookup_elem, bpf_map_peek_elem,
+    bpf_map_pop_elem, bpf_map_push_elem, bpf_map_update_elem,
+    termination_check,
+};
+use crate::ffi;
 use crate::utils::{NoRef, PerfEventMaskedCPU, Result, StreamableProgram};
+use crate::linux::bpf::{
+    bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY, BPF_MAP_TYPE_HASH,
+    BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_RINGBUF,
+    BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
+    BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS, BPF_RB_PROD_POS, BPF_RB_RING_SIZE}
 use crate::{
     base_helper::{
         bpf_map_delete_elem,
@@ -17,8 +33,12 @@ use crate::{
         BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
     },
 };
-use core::{marker::PhantomData, mem, ptr};
+use crate::linux::errno::EINVAL;
+use crate::utils::{to_result, NoRef, Result};
 
+/// Rex equivalent to be used for map APIs in place of the `struct bpf_map`.
+/// The key and the value type are encoded as generics types `K` and `V`.
+/// The map type is encoded as a const-generic using the `bpf_map_type` enum.
 #[repr(C)]
 pub struct RexMapHandle<const MT: bpf_map_type, K, V>
 where
@@ -70,18 +90,7 @@ pub type RexArrayMap<V> = RexMapHandle<BPF_MAP_TYPE_ARRAY, u32, V>;
 pub type RexHashMap<K, V> = RexMapHandle<BPF_MAP_TYPE_HASH, K, V>;
 pub type RexStack<V> = RexMapHandle<BPF_MAP_TYPE_STACK, (), V>;
 pub type RexQueue<V> = RexMapHandle<BPF_MAP_TYPE_QUEUE, (), V>;
-
-#[repr(C)]
-pub struct RexRingBuf {
-    map_type: u32,
-    key_size: u32,
-    val_size: u32,
-    max_size: u32,
-    map_flag: u32,
-    pub(crate) kptr: *mut (),
-}
-
-unsafe impl Sync for RexRingBuf {}
+pub type RexRingBuf = RexMapHandle<BPF_MAP_TYPE_RINGBUF, (), ()>;
 
 impl<'a, K, V> RexHashMap<K, V>
 where
@@ -140,53 +149,6 @@ where
     }
 }
 
-// impl RexRingBuf {
-//     pub const fn new(ms: u32, mf: u32) -> RexRingBuf {
-//         RexRingBuf {
-//             map_type: BPF_MAP_TYPE_RINGBUF,
-//             key_size: 0,
-//             val_size: 0,
-//             max_size: ms,
-//             map_flag: mf,
-//             kptr: ptr::null_mut(),
-//         }
-//     }
-//
-//     pub fn reserve<'a, T>(
-//         &'static self,
-//         submit_by_default: bool,
-//         value: T,
-//     ) -> Option<RexRingBufEntry<'a, T>> {
-//         let data: *mut T = bpf_ringbuf_reserve::<T>(self, 0);
-//         if data.is_null() {
-//             None
-//         } else {
-//             unsafe { data.write(value) };
-//             Some(RexRingBufEntry {
-//                 data: unsafe { &mut *data },
-//                 submit_by_default,
-//                 has_used: false,
-//             })
-//         }
-//     }
-//
-//     pub fn available_bytes(&'static self) -> Option<u64> {
-//         bpf_ringbuf_query(self, BPF_RB_AVAIL_DATA as u64)
-//     }
-//
-//     pub fn size(&'static self) -> Option<u64> {
-//         bpf_ringbuf_query(self, BPF_RB_RING_SIZE as u64)
-//     }
-//
-//     pub fn consumer_position(&'static self) -> Option<u64> {
-//         bpf_ringbuf_query(self, BPF_RB_CONS_POS as u64)
-//     }
-//
-//     pub fn producer_position(&'static self) -> Option<u64> {
-//         bpf_ringbuf_query(self, BPF_RB_PROD_POS as u64)
-//     }
-// }
-
 impl<V> RexStack<V>
 where
     V: Copy + NoRef,
@@ -229,36 +191,178 @@ where
     }
 }
 
-// pub struct RexRingBufEntry<'a, T> {
-//     data: &'a mut T,
-//     submit_by_default: bool,
-//     has_used: bool,
-// }
-//
-// impl<T> RexRingBufEntry<'_, T> {
-//     pub fn submit(mut self) {
-//         self.has_used = true;
-//         bpf_ringbuf_submit(self.data, 0)
-//     }
-//
-//     pub fn discard(mut self) {
-//         self.has_used = true;
-//         bpf_ringbuf_discard(self.data, 0)
-//     }
-//
-//     pub fn write(&mut self, value: T) {
-//         *self.data = value
-//     }
-// }
-//
-// impl<T> core::ops::Drop for RexRingBufEntry<'_, T> {
-//     fn drop(&mut self) {
-//         if !self.has_used {
-//             if self.submit_by_default {
-//                 bpf_ringbuf_submit(self.data, 0);
-//             } else {
-//                 bpf_ringbuf_discard(self.data, 0);
-//             }
-//         }
-//     }
-// }
+impl RexRingBuf {
+    /// Reserves `size` bytes of payload in the ring buffer.
+    ///
+    /// If the operation succeeds, A [`RexRingBufEntry`] representing the
+    /// payload is returned, otherwise (e.g., there is not enough memory
+    /// available), `None` is returned.
+    pub fn reserve<'a>(
+        &'static self,
+        size: usize,
+    ) -> Option<RexRingBufEntry<'a>> {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return None;
+        }
+
+        let data = termination_check!(unsafe {
+            ffi::bpf_ringbuf_reserve(map_kptr, size as u64, 0)
+        });
+
+        if data.is_null() {
+            None
+        } else {
+            let data =
+                unsafe { slice::from_raw_parts_mut(data as *mut u8, size) };
+            Some(RexRingBufEntry { data })
+        }
+    }
+
+    /// Copies bytes from the `data` slice into the ring buffer.
+    ///
+    /// If [`crate::linux::bpf::BPF_RB_NO_WAKEUP`] is specified in `flags`,
+    /// no notification of new data availability is sent.
+    /// If [`crate::linux::bpf::BPF_RB_FORCE_WAKEUP`] is specified in `flags`,
+    /// notification of new data availability is sent unconditionally.
+    /// If `0` is specified in `flags`, an adaptive notification of new data
+    /// availability is sent.
+    ///
+    /// Returns a [`crate::Result`] on whether the operation is successful
+    pub fn output(&'static self, data: &[u8], flags: u64) -> crate::Result {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return Err(EINVAL as i32);
+        }
+
+        termination_check!(unsafe {
+            to_result!(ffi::bpf_ringbuf_output(
+                map_kptr,
+                data.as_ptr() as *const (),
+                data.len() as u64,
+                flags
+            ))
+        })
+    }
+
+    /// Queries the amount of data not yet consumed.
+    ///
+    /// Returns `None` is `self` is not a valid ring buffer.
+    pub fn available_bytes(&'static self) -> Option<u64> {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return None;
+        }
+
+        termination_check!(unsafe {
+            Some(ffi::bpf_ringbuf_query(map_kptr, BPF_RB_AVAIL_DATA as u64))
+        })
+    }
+
+    /// Queries the size of ring buffer.
+    ///
+    /// Returns `None` is `self` is not a valid ring buffer.
+    pub fn size(&'static self) -> Option<u64> {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return None;
+        }
+
+        termination_check!(unsafe {
+            Some(ffi::bpf_ringbuf_query(map_kptr, BPF_RB_RING_SIZE as u64))
+        })
+    }
+
+    /// Queries the consumer position, which may wrap around.
+    ///
+    /// Returns `None` is `self` is not a valid ring buffer.
+    pub fn consumer_position(&'static self) -> Option<u64> {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return None;
+        }
+
+        termination_check!(unsafe {
+            Some(ffi::bpf_ringbuf_query(map_kptr, BPF_RB_CONS_POS as u64))
+        })
+    }
+
+    /// Queries the Producer(s) position which may wrap around.
+    ///
+    /// Returns `None` is `self` is not a valid ring buffer.
+    pub fn producer_position(&'static self) -> Option<u64> {
+        let map_kptr = unsafe { core::ptr::read_volatile(&self.kptr) };
+        if unlikely(map_kptr.is_null()) {
+            return None;
+        }
+
+        termination_check!(unsafe {
+            Some(ffi::bpf_ringbuf_query(map_kptr, BPF_RB_PROD_POS as u64))
+        })
+    }
+}
+
+pub struct RexRingBufEntry<'a> {
+    data: &'a mut [u8],
+}
+
+impl RexRingBufEntry<'_> {
+    /// Consumes the reserved payload and submits it to the ring buffer.
+    ///
+    /// If [`crate::linux::bpf::BPF_RB_NO_WAKEUP`] is specified in `flags`,
+    /// no notification of new data availability is sent.
+    /// If [`crate::linux::bpf::BPF_RB_FORCE_WAKEUP`] is specified in `flags`,
+    /// notification of new data availability is sent unconditionally.
+    /// If `0` is specified in `flags`, an adaptive notification of new data
+    /// availability is sent.
+    ///
+    /// This method always succeeds.
+    pub fn submit(self, flags: u64) {
+        termination_check!(unsafe {
+            ffi::bpf_ringbuf_submit(self.data.as_mut_ptr() as *mut (), flags)
+        });
+        // Avoid calling ringbuf_discard twice
+        mem::forget(self);
+    }
+
+    /// Consumes the reserved payload and discards it.
+    ///
+    /// If [`crate::linux::bpf::BPF_RB_NO_WAKEUP`] is specified in `flags`,
+    /// no notification of new data availability is sent.
+    /// If [`crate::linux::bpf::BPF_RB_FORCE_WAKEUP`] is specified in `flags`,
+    /// notification of new data availability is sent unconditionally.
+    /// If `0` is specified in `flags`, an adaptive notification of new data
+    /// availability is sent.
+    ///
+    /// This method always succeeds.
+    pub fn discard(self, flags: u64) {
+        termination_check!(unsafe {
+            ffi::bpf_ringbuf_discard(self.data.as_mut_ptr() as *mut (), flags)
+        });
+        // Avoid calling ringbuf_discard twice
+        mem::forget(self);
+    }
+}
+
+impl Deref for RexRingBufEntry<'_> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        self.data
+    }
+}
+
+impl DerefMut for RexRingBufEntry<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.data
+    }
+}
+
+impl core::ops::Drop for RexRingBufEntry<'_> {
+    /// Discard reserved payload when dropped
+    fn drop(&mut self) {
+        termination_check!(unsafe {
+            ffi::bpf_ringbuf_discard(self.data.as_mut_ptr() as *mut (), 0)
+        });
+    }
+}

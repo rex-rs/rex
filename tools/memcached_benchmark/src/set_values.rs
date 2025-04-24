@@ -1,9 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use anyhow::Result;
 use async_memcached::AsciiProtocol;
 use log::info;
-use tokio::{sync::Semaphore, task::JoinSet};
+use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 
 pub(super) async fn set_memcached_value(
     test_dict: Arc<HashMap<Arc<String>, Arc<String>>>,

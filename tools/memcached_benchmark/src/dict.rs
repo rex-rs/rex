@@ -1,15 +1,17 @@
-use std::{collections::HashMap, mem::size_of_val, sync::Arc};
+use std::collections::HashMap;
+use std::mem::size_of_val;
+use std::sync::Arc;
 
 use log::{debug, info};
-use rand::{
-    Rng,
-    distr::{Alphanumeric, SampleString},
-};
-use rand_chacha::{ChaCha8Rng, rand_core::SeedableRng};
+use rand::Rng;
+use rand::distr::{Alphanumeric, SampleString};
+use rand_chacha::ChaCha8Rng;
+use rand_chacha::rand_core::SeedableRng;
 use rand_distr::Zipf;
 use rayon::prelude::*;
 
-use crate::{Protocol, fs::write_hashmap_to_file};
+use crate::Protocol;
+use crate::fs::write_hashmap_to_file;
 
 const SEED: u64 = 12312;
 

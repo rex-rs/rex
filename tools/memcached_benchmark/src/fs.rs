@@ -1,9 +1,7 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::{BufRead, BufReader, Write},
-    path::Path,
-};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
+use std::path::Path;
 
 use anyhow::Result;
 use log::{debug, info};

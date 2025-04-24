@@ -2,15 +2,13 @@
 #![no_main]
 extern crate rex;
 
-use rex::rex_kprobe;
-use rex::rex_printk;
 // use rex::tracepoint::*;
 use core::hint::black_box;
-use rex::Result;
+
 use rex::kprobe::*;
 use rex::map::RexArrayMap;
 use rex::pt_regs::PtRegs;
-use rex::rex_map;
+use rex::{Result, rex_kprobe, rex_map, rex_printk};
 
 #[rex_map]
 static data_map: RexArrayMap<u32> = RexArrayMap::new(2, 0);

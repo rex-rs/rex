@@ -6,14 +6,14 @@ mod tc;
 mod tracepoint;
 mod xdp;
 
-use proc_macro::TokenStream;
-use proc_macro_error::{abort, proc_macro_error};
-use quote::quote;
 use std::borrow::Cow;
-use syn::ItemStatic;
 
 use kprobe::{KProbe, KprobeFlavor};
 use perf_event::PerfEvent;
+use proc_macro::TokenStream;
+use proc_macro_error::{abort, proc_macro_error};
+use quote::quote;
+use syn::ItemStatic;
 use tc::SchedCls;
 use tracepoint::TracePoint;
 use xdp::Xdp;

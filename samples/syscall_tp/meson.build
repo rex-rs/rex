@@ -55,8 +55,9 @@ syscall_tp_loader = executable(
 sanity_test = custom_target(
   'sanity_test',
   output: ['runtest.py'],
+  input: join_paths(meson.current_source_dir(), 'tests/runtest.py'),
   command: [
-    'cp', '@CURRENT_SOURCE_DIR@/tests/runtest.py', '@OUTPUT@',
+    'cp', '@INPUT@', '@OUTPUT@',
     ]
  )
 

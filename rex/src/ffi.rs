@@ -211,6 +211,17 @@ unsafe extern "C" {
         flags: u64,
     ) -> *mut ();
 
+    /// long bpf_ringbuf_output(void *ringbuf, void *data, u64 size, u64 flags)
+    // data is marked `ARG_PTR_TO_MEM | MEM_RDONLY`, which implies the argument
+    // is comptiable with readonly memory and does not modifiy the memory
+    // pointed by the pointer, therefore, we use a *const () type.
+    pub(crate) fn bpf_ringbuf_output(
+        ringbuf: *mut (),
+        data: *const (),
+        size: u64,
+        flags: u64,
+    ) -> i64;
+
     /// void bpf_ringbuf_submit(void *data, u64 flags)
     pub(crate) fn bpf_ringbuf_submit(data: *mut (), flags: u64);
 

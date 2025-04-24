@@ -10,6 +10,16 @@ edition = "2024"
 [dependencies.rex]
 path = "../../rex"
 
+[lints.clippy]
+disallowed_methods = "forbid"
+disallowed_types = "forbid"
+
+[lints.rust]
+incomplete_features = "forbid"
+internal_features = "forbid"
+unsafe_code = "forbid"
+unstable_features = "forbid"
+
 [profile.dev]
 panic = "abort"
 debug = false

@@ -1,7 +1,9 @@
-use std::{thread, time::Duration};
+use std::thread;
+use std::time::Duration;
 
 use anyhow::{Ok, Result};
-use assert_cmd::{Command, assert::OutputAssertExt};
+use assert_cmd::Command;
+use assert_cmd::assert::OutputAssertExt;
 use duct::{Handle, cmd};
 use log::{debug, info};
 use tempfile::TempDir;

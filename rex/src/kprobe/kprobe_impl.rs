@@ -1,9 +1,8 @@
 use crate::bindings::uapi::linux::bpf::{bpf_map_type, BPF_PROG_TYPE_KPROBE};
-use crate::ffi;
 use crate::prog_type::rex_prog;
 use crate::pt_regs::PtRegs;
 use crate::task_struct::TaskStruct;
-use crate::Result;
+use crate::{ffi, Result};
 
 /// First 3 fields should always be rtti, prog_fn, and name
 ///

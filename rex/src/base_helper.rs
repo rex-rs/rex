@@ -1,3 +1,7 @@
+// use crate::timekeeping::*;
+use core::intrinsics::unlikely;
+use core::mem::MaybeUninit;
+
 use crate::ffi;
 use crate::linux::bpf::bpf_map_type;
 use crate::linux::errno::EINVAL;
@@ -5,10 +9,6 @@ use crate::map::*;
 use crate::per_cpu::{cpu_number, this_cpu_read};
 use crate::random32::bpf_user_rnd_u32;
 use crate::utils::{to_result, NoRef, Result};
-use core::mem::MaybeUninit;
-// use crate::timekeeping::*;
-
-use core::intrinsics::unlikely;
 
 macro_rules! termination_check {
     ($func:expr) => {{
@@ -283,50 +283,6 @@ pub(crate) fn bpf_snprintf<const N: usize, const M: usize>(
     })
 }
 
-// TODO: fix ring buf helpers for Electrode, need to limit type with trait NoRef
-// pub(crate) fn bpf_ringbuf_reserve<T>(
-//     map: &'static RexRingBuf,
-//     size: u64,
-// ) -> *mut T {
-//     let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
-//     if unlikely(map_kptr.is_null()) {
-//         return core::ptr::null_mut();
-//     }
-//
-//     let data = termination_check!(unsafe {
-//         ffi::bpf_ringbuf_reserve(map_kptr, mem::size_of::<T>() as u64, 0)
-//     });
-//
-//     data as *mut T
-// }
-//
-// pub(crate) fn bpf_ringbuf_submit<T>(data: &mut T, flags: u64) {
-//     compile_error!("Not finished");
-//     termination_check!(unsafe {
-//         ffi::bpf_ringbuf_submit(data as *mut T as *mut (), flags)
-//     })
-// }
-
-// pub(crate) fn bpf_ringbuf_discard<T>(data: &mut T, flags: u64) {
-//     compile_error!("Not finished");
-//     termination_check!(unsafe {
-//         ffi::bpf_ringbuf_discard(data as *mut T as *mut (), flags)
-//     })
-// }
-
-// pub(crate) fn bpf_ringbuf_query(
-//     map: &'static RexRingBuf,
-//     flags: u64,
-// ) -> Option<u64> {
-//     let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
-//     if unlikely(map_kptr.is_null()) {
-//         return None;
-//     }
-//     Some(termination_check!(unsafe {
-//         ffi::bpf_ringbuf_query(map_kptr, flags)
-//     }))
-// }
-
 macro_rules! base_helper_defs {
     () => {
         #[inline(always)]
@@ -489,5 +445,4 @@ macro_rules! base_helper_defs {
     };
 }
 
-pub(crate) use base_helper_defs;
-pub(crate) use termination_check;
+pub(crate) use {base_helper_defs, termination_check};

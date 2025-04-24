@@ -1,12 +1,10 @@
 #![no_std]
 #![no_main]
 
-use rex::Result;
 use rex::kprobe::kprobe;
 use rex::map::RexHashMap;
 use rex::pt_regs::PtRegs;
-use rex::rex_kprobe;
-use rex::rex_map;
+use rex::{Result, rex_kprobe, rex_map};
 
 #[allow(non_upper_case_globals)]
 #[rex_map]

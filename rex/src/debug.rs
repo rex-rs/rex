@@ -1,6 +1,4 @@
-use core::ffi::c_uchar;
-
-use core::ffi::c_int;
+use core::ffi::{c_int, c_uchar};
 
 use crate::ffi;
 
