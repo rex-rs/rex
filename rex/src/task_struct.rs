@@ -1,7 +1,7 @@
 use crate::bindings::linux::kernel::task_struct;
-use crate::bindings::uapi::linux::errno::EINVAL;
 use crate::per_cpu::{current_task, this_cpu_read};
 use crate::pt_regs::PtRegs;
+use core::ffi::{self, CStr};
 
 // Bindgen has problem generating these constants
 const TOP_OF_KERNEL_STACK_PADDING: u64 = 0;
@@ -43,27 +43,19 @@ impl TaskStruct {
         self.kptr.tgid
     }
 
-    // Design decision: the original BPF interface does not have type safety,
-    // since buf is just a buffer. But in Rust we can use const generics to
-    // restrict it to only [u8; N] given that comm is a cstring. This also
-    // automatically achieves size check, since N is a constexpr.
-    pub fn get_comm<const N: usize>(&self, buf: &mut [i8; N]) -> i32 {
-        if N == 0 {
-            return -(EINVAL as i32);
-        }
-
-        let size = core::cmp::min::<usize>(N, self.kptr.comm.len()) - 1;
-        if size == 0 {
-            return -(EINVAL as i32);
-        }
-
-        buf[..size].copy_from_slice(&self.kptr.comm[..size]);
-        buf[size] = 0;
-        0
+    // Design decision: the equivalent BPF helper writes the program name to
+    // a user-provided buffer, here we can take advantage of Rust's ownership by
+    // just providing a reference to the CString instead
+    pub fn get_comm(&self) -> Result<&CStr, ffi::FromBytesUntilNulError> {
+        // casting from c_char to u8 is sound, see:
+        // https://doc.rust-lang.org/stable/src/core/ffi/c_str.rs.html#276-288
+        let comm_bytes =
+            unsafe { &*(&self.kptr.comm[..] as *const _ as *const [u8]) };
+        CStr::from_bytes_until_nul(comm_bytes)
     }
 
     pub fn get_pt_regs(&self) -> &'static PtRegs {
-        // X86 sepcific
+        // X86 specific
         // stack_top is actually bottom of the kernel stack, it refers to the
         // highest address of the stack pages
         let stack_top =

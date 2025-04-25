@@ -1,8 +1,29 @@
+use std::fmt;
+
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse2, ItemFn, Result};
 
 use crate::args::parse_string_args;
+
+#[allow(dead_code)]
+pub enum KprobeFlavor {
+    Kprobe,
+    Kretprobe,
+    Uprobe,
+    Uretprobe,
+}
+
+impl fmt::Display for KprobeFlavor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KprobeFlavor::Kprobe => write!(f, "kprobe"),
+            KprobeFlavor::Kretprobe => write!(f, "kretprobe"),
+            KprobeFlavor::Uprobe => write!(f, "uprobe"),
+            KprobeFlavor::Uretprobe => write!(f, "uretprobe"),
+        }
+    }
+}
 
 pub(crate) struct KProbe {
     function: Option<String>,
@@ -23,7 +44,7 @@ impl KProbe {
         Ok(KProbe { function, item })
     }
 
-    pub(crate) fn expand(&self) -> Result<TokenStream> {
+    pub(crate) fn expand(&self, flavor: KprobeFlavor) -> Result<TokenStream> {
         let fn_name = self.item.sig.ident.clone();
         let item = &self.item;
         let function_name = format!("{}", fn_name);
@@ -31,9 +52,9 @@ impl KProbe {
             format_ident!("PROG_{}", fn_name.to_string().to_uppercase());
 
         let attached_function = if self.function.is_some() {
-            format!("rex/kprobe/{}", self.function.as_ref().unwrap())
+            format!("rex/{}/{}", flavor, self.function.as_ref().unwrap())
         } else {
-            "rex/kprobe".to_string()
+            format!("rex/{}", flavor)
         };
 
         let function_body_tokens = quote! {

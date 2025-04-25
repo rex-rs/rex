@@ -132,6 +132,53 @@ unsafe extern "C" {
         size: u32,
     ) -> i64;
 
+    /// `long bpf_perf_event_output_tp(void *tp_buff, struct bpf_map *map, u64
+    ///  flags, void *data, u64 size)`
+    pub(crate) fn bpf_perf_event_output_tp(
+        tp_buff: *const (),
+        map: *mut (),
+        flags: u64,
+        data: *const (),
+        size: u64,
+    ) -> i64;
+
+    /// `long bpf_perf_event_read_value(struct bpf_map *map, u64 flags,
+    /// struct bpf_perf_event_value *buf, u32 buf_size)`
+    /// same reason for use of improper_ctypes as bpf_perf_prog_read_value
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_perf_event_read_value(
+        map: *mut (),
+        flags: u64,
+        buf: &mut bpf_perf_event_value,
+        buf_size: u32,
+    ) -> i64;
+
+    /// `long bpf_skb_event_output(struct sk_buff *skb, struct bpf_map *map, u64 flags,
+    ///  void *meta, u64 meta_size)`
+    /// The compiler complains about some non-FFI safe type, but since the
+    /// kernel is using it fine it should be safe for an FFI call using C ABI
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_skb_event_output(
+        skb: *const sk_buff,
+        map: *mut (),
+        flags: u64,
+        meta: *const (),
+        meta_size: u64,
+    ) -> i64;
+
+    /// `long bpf_xdp_event_output(struct xdp_buff *xdp, struct bpf_map *map, u64 flags,
+    ///  void *meta, u64 meta_size)`
+    /// The compiler complains about some non-FFI safe type, but since the
+    /// kernel is using it fine it should be safe for an FFI call using C ABI
+    #[allow(improper_ctypes)]
+    pub(crate) fn bpf_xdp_event_output(
+        xdp: *const xdp_buff,
+        map: *mut (),
+        flags: u64,
+        meta: *const (),
+        meta_size: u64,
+    ) -> i64;
+
     /// `long bpf_xdp_adjust_head(struct xdp_buff *xdp, int offset)`
     ///
     /// The compiler complains about some non-FFI safe type, but since the

@@ -11,12 +11,15 @@ use crate::base_helper::{
 use crate::ffi;
 use crate::linux::bpf::{
     bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY, BPF_MAP_TYPE_HASH,
-    BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_RINGBUF,
-    BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
-    BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS, BPF_RB_PROD_POS, BPF_RB_RING_SIZE,
+    BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_PERF_EVENT_ARRAY,
+    BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_RINGBUF, BPF_MAP_TYPE_STACK,
+    BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST, BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS,
+    BPF_RB_PROD_POS, BPF_RB_RING_SIZE,
 };
 use crate::linux::errno::EINVAL;
-use crate::utils::{to_result, NoRef, Result};
+use crate::utils::{
+    to_result, NoRef, PerfEventMaskedCPU, Result, StreamableProgram,
+};
 
 /// Rex equivalent to be used for map APIs in place of the `struct bpf_map`.
 /// The key and the value type are encoded as generics types `K` and `V`.
@@ -66,6 +69,8 @@ unsafe impl<const MT: bpf_map_type, K, V> Sync for RexMapHandle<MT, K, V> where
 
 pub type RexStackTrace<K, V> = RexMapHandle<BPF_MAP_TYPE_STACK_TRACE, K, V>;
 pub type RexPerCPUArrayMap<V> = RexMapHandle<BPF_MAP_TYPE_PERCPU_ARRAY, u32, V>;
+pub type RexPerfEventArray<V> =
+    RexMapHandle<BPF_MAP_TYPE_PERF_EVENT_ARRAY, u32, V>;
 pub type RexArrayMap<V> = RexMapHandle<BPF_MAP_TYPE_ARRAY, u32, V>;
 pub type RexHashMap<K, V> = RexMapHandle<BPF_MAP_TYPE_HASH, K, V>;
 pub type RexStack<V> = RexMapHandle<BPF_MAP_TYPE_STACK, (), V>;
@@ -111,6 +116,21 @@ where
 
     pub fn delete(&'static self, key: &u32) -> Result {
         bpf_map_delete_elem(self, key)
+    }
+}
+
+impl<'a, V> RexPerfEventArray<V>
+where
+    V: Copy + NoRef,
+{
+    pub fn output<P: StreamableProgram>(
+        &'static self,
+        program: &P,
+        ctx: &P::Context,
+        data: &V,
+        cpu: PerfEventMaskedCPU,
+    ) -> Result {
+        program.output_event(ctx, self, data, cpu)
     }
 }
 

@@ -1,4 +1,7 @@
-use core::ffi::{c_int, c_uchar};
+use crate::bindings::uapi::linux::bpf::{BPF_F_CURRENT_CPU, BPF_F_INDEX_MASK};
+use crate::bindings::uapi::linux::errno::EINVAL;
+use crate::map::RexPerfEventArray;
+use core::ffi::{c_int, c_uchar, CStr};
 use core::mem;
 use core::ops::{Deref, DerefMut, Drop};
 
@@ -257,4 +260,55 @@ where
     } else {
         unsafe { AlignedMut::from_val(ptr.read_unaligned(), slice) }
     }
+}
+
+/// programs that can stream data through a
+/// RexPerfEventArray will implement this trait
+pub trait StreamableProgram {
+    type Context: ?Sized;
+    fn output_event<T: Copy + NoRef>(
+        &self,
+        ctx: &Self::Context,
+        map: &'static RexPerfEventArray<T>,
+        data: &T,
+        cpu: PerfEventMaskedCPU,
+    ) -> Result;
+}
+
+/// newtype for a cpu for perf event output to ensure
+/// type safety since the cpu must be masked
+/// with BPF_F_INDEX_MASK
+#[derive(Debug, Copy, Clone)]
+pub struct PerfEventMaskedCPU {
+    pub(crate) masked_cpu: u64,
+}
+
+impl PerfEventMaskedCPU {
+    pub fn current_cpu() -> Self {
+        PerfEventMaskedCPU {
+            masked_cpu: BPF_F_CURRENT_CPU,
+        }
+    }
+    pub fn any_cpu(cpu: u64) -> Self {
+        PerfEventMaskedCPU {
+            masked_cpu: cpu & BPF_F_INDEX_MASK,
+        }
+    }
+}
+
+pub fn copy_cstr_to_array<const N: usize>(
+    src: &CStr,
+    dst: &mut [u8; N],
+) -> Result {
+    if N == 0 {
+        return Err(-(EINVAL as i32));
+    }
+    let src_bytes = src.to_bytes_with_nul();
+    let size = core::cmp::min::<usize>(N, src_bytes.len()) - 1;
+    if size == 0 {
+        return Err(-(EINVAL as i32));
+    }
+    dst[..size].copy_from_slice(&src_bytes[..size]);
+    dst[size] = 0;
+    Ok(0)
 }
