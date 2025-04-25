@@ -1,10 +1,49 @@
+use crate::base_helper::termination_check;
 use crate::bindings::uapi::linux::bpf::{
     bpf_map_type, BPF_PROG_TYPE_TRACEPOINT,
 };
 use crate::ffi;
+use crate::map::RexPerfEventArray;
 use crate::prog_type::rex_prog;
 use crate::task_struct::TaskStruct;
+use crate::utils::{to_result, NoRef, PerfEventMaskedCPU, StreamableProgram};
 use crate::Result;
+
+use super::binding::*;
+
+pub enum TracepointContext {
+    SyscallsEnterOpen(&'static SyscallsEnterOpenCtx),
+    SyscallsEnterOpenat(&'static SyscallsEnterOpenatCtx),
+    SyscallsExitOpen(&'static SyscallsExitOpenCtx),
+    SyscallsExitOpenat(&'static SyscallsExitOpenatCtx),
+    SyscallsEnterDup(&'static SyscallsEnterDupCtx),
+    RawSyscallsEnter(&'static RawSyscallsEnterCtx),
+}
+
+impl TracepointContext {
+    unsafe fn get_ptr(&self) -> *const () {
+        match self {
+            TracepointContext::SyscallsEnterOpen(ctx) => {
+                *ctx as *const SyscallsEnterOpenCtx as *const ()
+            }
+            TracepointContext::SyscallsEnterOpenat(ctx) => {
+                *ctx as *const SyscallsEnterOpenatCtx as *const ()
+            }
+            TracepointContext::SyscallsExitOpen(ctx) => {
+                *ctx as *const SyscallsExitOpenCtx as *const ()
+            }
+            TracepointContext::SyscallsExitOpenat(ctx) => {
+                *ctx as *const SyscallsExitOpenatCtx as *const ()
+            }
+            TracepointContext::SyscallsEnterDup(ctx) => {
+                *ctx as *const SyscallsEnterDupCtx as *const ()
+            }
+            TracepointContext::RawSyscallsEnter(ctx) => {
+                *ctx as *const RawSyscallsEnterCtx as *const ()
+            }
+        }
+    }
+}
 
 /// First 3 fields should always be rtti, prog_fn, and name
 ///
@@ -50,7 +89,7 @@ impl rex_prog for tracepoint {
 }
 
 impl StreamableProgram for tracepoint {
-    type Context = tp_ctx;
+    type Context = TracepointContext;
     fn output_event<T: Copy + NoRef>(
         &self,
         ctx: &Self::Context,
@@ -66,30 +105,7 @@ impl StreamableProgram for tracepoint {
                 map_kptr,
                 cpu.masked_cpu,
                 data as *const T as *const (),
-                mem::size_of::<T>() as u64,
-            ))
-        })
-    }
-}
-
-impl StreamableProgram for tracepoint {
-    type Context = tp_ctx;
-    fn output_event<T: Copy + NoRef>(
-        &self,
-        ctx: &Self::Context,
-        map: &'static RexPerfEventArray<T>,
-        data: &T,
-        cpu: PerfEventMaskedCPU,
-    ) -> Result {
-        let map_kptr = unsafe { core::ptr::read_volatile(&map.kptr) };
-        let ctx_ptr = unsafe { ctx.get_ptr() };
-        termination_check!(unsafe {
-            to_result!(ffi::bpf_perf_event_output_tp(
-                ctx_ptr,
-                map_kptr,
-                cpu.masked_cpu,
-                data as *const T as *const (),
-                mem::size_of::<T>() as u64,
+                core::mem::size_of::<T>() as u64,
             ))
         })
     }

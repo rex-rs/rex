@@ -1,5 +1,4 @@
 use crate::bindings::linux::kernel::task_struct;
-use crate::bindings::uapi::linux::errno::EINVAL;
 use crate::per_cpu::{current_task, this_cpu_read};
 use crate::pt_regs::PtRegs;
 use core::ffi::{self, CStr};

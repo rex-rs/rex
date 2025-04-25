@@ -9,32 +9,17 @@ use crate::base_helper::{
     termination_check,
 };
 use crate::ffi;
-use crate::utils::{NoRef, PerfEventMaskedCPU, Result, StreamableProgram};
 use crate::linux::bpf::{
     bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY, BPF_MAP_TYPE_HASH,
-    BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_RINGBUF,
-    BPF_MAP_TYPE_STACK, BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
-    BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS, BPF_RB_PROD_POS, BPF_RB_RING_SIZE}
-use crate::{
-    base_helper::{
-        bpf_map_delete_elem,
-        bpf_map_lookup_elem,
-        bpf_map_peek_elem,
-        bpf_map_pop_elem,
-        bpf_map_push_elem,
-        bpf_map_update_elem,
-        // bpf_ringbuf_discard, bpf_ringbuf_query, bpf_ringbuf_reserve,
-        // bpf_ringbuf_submit,
-    },
-    linux::bpf::{
-        bpf_map_type, BPF_ANY, BPF_EXIST, BPF_MAP_TYPE_ARRAY,
-        BPF_MAP_TYPE_HASH, BPF_MAP_TYPE_PERCPU_ARRAY,
-        BPF_MAP_TYPE_PERF_EVENT_ARRAY, BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_STACK,
-        BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST,
-    },
+    BPF_MAP_TYPE_PERCPU_ARRAY, BPF_MAP_TYPE_PERF_EVENT_ARRAY,
+    BPF_MAP_TYPE_QUEUE, BPF_MAP_TYPE_RINGBUF, BPF_MAP_TYPE_STACK,
+    BPF_MAP_TYPE_STACK_TRACE, BPF_NOEXIST, BPF_RB_AVAIL_DATA, BPF_RB_CONS_POS,
+    BPF_RB_PROD_POS, BPF_RB_RING_SIZE,
 };
 use crate::linux::errno::EINVAL;
-use crate::utils::{to_result, NoRef, Result};
+use crate::utils::{
+    to_result, NoRef, PerfEventMaskedCPU, Result, StreamableProgram,
+};
 
 /// Rex equivalent to be used for map APIs in place of the `struct bpf_map`.
 /// The key and the value type are encoded as generics types `K` and `V`.

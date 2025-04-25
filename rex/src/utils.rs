@@ -1,7 +1,6 @@
 use crate::bindings::uapi::linux::bpf::{BPF_F_CURRENT_CPU, BPF_F_INDEX_MASK};
 use crate::bindings::uapi::linux::errno::EINVAL;
 use crate::map::RexPerfEventArray;
-use crate::tracepoint::{tp_ctx, tracepoint};
 use core::ffi::{c_int, c_uchar, CStr};
 use core::mem;
 use core::ops::{Deref, DerefMut, Drop};

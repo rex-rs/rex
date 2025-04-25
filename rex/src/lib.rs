@@ -31,7 +31,6 @@ mod random32;
 
 extern crate paste;
 
-use crate::bindings::uapi::linux::bpf::BPF_F_CURRENT_CPU;
 use paste::paste;
 pub use rex_macros::*;
 

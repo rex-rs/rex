@@ -34,8 +34,8 @@ impl TracePoint {
         if context_type_ref
             .lifetime
             .expect_or_abort("Context reference needs to be static")
-            .ident
-            != "static"
+            .ident !=
+            "static"
         {
             abort_call_site!("Context reference needs to be static");
         }
@@ -64,6 +64,7 @@ impl TracePoint {
             "SyscallsExitOpenCtx" => "syscalls/sys_exit_open",
             "SyscallsExitOpenatCtx" => "syscalls/sys_exit_openat",
             "SyscallsEnterDupCtx" => "syscalls/sys_enter_dup",
+            "RawSyscallsEnterCtx" => "raw_syscalls/sys_enter",
             _ => abort_call_site!("Please provide a valid context type. If your needed context isn't supported consider opening a PR!"),
         };
         let attached_name = format!("rex/tracepoint/{}", hook_point_name);

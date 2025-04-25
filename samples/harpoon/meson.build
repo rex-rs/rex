@@ -13,8 +13,8 @@ env.set('LINUX_OBJ', kbuild_dir)
 env.set('LINUX_SRC', join_paths(meson.project_source_root(), './linux'))
 env.set('CARGO_TARGET_DIR', join_paths(build_dir, 'target'))
 
-hello_clippy = custom_target(
-  'hello-clippy',
+harpoon_clippy = custom_target(
+  'harpoon-clippy',
   output: ['target'],
   command: [
     cargo_wrapper, rust_bin, '-Z',
@@ -27,9 +27,9 @@ hello_clippy = custom_target(
   build_by_default: true
 )
 
-hello_build = custom_target(
-  'hello-build',
-  output: ['hello'],
+harpoon_build = custom_target(
+  'harpoon-build',
+  output: ['harpoon'],
   command: [
     cargo_wrapper, rust_bin, '-Z',
     'unstable-options',
@@ -43,7 +43,7 @@ hello_build = custom_target(
   build_by_default: true
 )
 
-hello_loader = executable(
+harpoon_loader = executable(
   'loader',
   'loader.c',
   build_by_default: true,
@@ -51,7 +51,7 @@ hello_loader = executable(
   pie: true
 )
 
-hello_trigger = executable(
+harpoon_trigger = executable(
   'event-trigger',
   'event-trigger.c',
   build_by_default: true,
@@ -76,7 +76,7 @@ sanity_test_env.set('Q_SCRIPT',
 )
 sanity_test_env.set('KERNEL_PATH', kbuild_dir)
 
-test('hello_test', 
+test('harpoon_test', 
   python3_bin, 
   args: [sanity_test_scripts],
   env: sanity_test_env,

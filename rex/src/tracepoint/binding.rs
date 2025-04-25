@@ -45,7 +45,7 @@ pub struct SyscallsEnterDupCtx {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct RawSyscallsEnterArgs {
+pub struct RawSyscallsEnterCtx {
     pub unused: u64,
     pub id: i64,
     pub args: [u64; 6],

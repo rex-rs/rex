@@ -1,6 +1,7 @@
+use std::fmt;
+
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use std::fmt;
 use syn::{parse2, ItemFn, Result};
 
 use crate::args::parse_string_args;

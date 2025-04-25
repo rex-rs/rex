@@ -8,7 +8,7 @@ use rex::linux::perf_event::PERF_MAX_STACK_DEPTH;
 use rex::map::*;
 use rex::perf_event::*;
 use rex::utils::copy_cstr_to_array;
-use rex::{rex_map, rex_perf_event, rex_printk, Result};
+use rex::{Result, rex_map, rex_perf_event, rex_printk};
 
 pub const TASK_COMM_LEN: usize = 16;
 
