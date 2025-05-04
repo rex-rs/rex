@@ -98,6 +98,7 @@ fn fast_broad_cast_main(obj: &sched_cls, skb: &mut __sk_buff) -> Result {
     )) as u32
     {
         IPPROTO_UDP => {
+            rex_printk!("tc udp\n");
             let port = u16::from_be(read_field!(
                 skb.data_slice,
                 iphdr_end,
@@ -116,6 +117,7 @@ fn fast_broad_cast_main(obj: &sched_cls, skb: &mut __sk_buff) -> Result {
                 return Ok(TC_ACT_OK as i32);
             }
 
+            rex_printk!("before udp fast\n");
             return handle_udp_fast_broad_cast(obj, skb);
         }
         _ => {}
