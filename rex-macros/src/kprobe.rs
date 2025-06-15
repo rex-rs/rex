@@ -57,14 +57,22 @@ impl KProbe {
             format!("rex/{}", flavor)
         };
 
+        let entry_name = format_ident!("__rex_entry_{}", fn_name);
+
         let function_body_tokens = quote! {
             #[inline(always)]
             #item
 
             #[used]
-            #[unsafe(link_section = #attached_function)]
             static #prog_ident: kprobe =
                 kprobe::new(#fn_name, #function_name);
+
+            #[unsafe(export_name = #function_name)]
+            #[unsafe(link_section = #attached_function)]
+            extern "C" fn #entry_name(ctx: *mut ()) -> u32 {
+                use rex::prog_type::rex_prog;
+                #prog_ident.prog_run(ctx)
+            }
         };
 
         Ok(function_body_tokens)

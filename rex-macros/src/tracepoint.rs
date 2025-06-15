@@ -72,7 +72,7 @@ impl TracePoint {
 
             #[unsafe(export_name = #function_name)]
             #[unsafe(link_section = #attached_name)]
-            fn #entry_name(ctx: *mut ()) -> u32 {
+            extern "C" fn #entry_name(ctx: *mut ()) -> u32 {
                 use rex::prog_type::rex_prog;
                 #prog_ident.prog_run(ctx)
             }
