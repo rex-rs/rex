@@ -28,14 +28,22 @@ impl SchedCls {
         let prog_ident =
             format_ident!("PROG_{}", fn_name.to_string().to_uppercase());
 
+        let entry_name = format_ident!("__rex_entry_{}", fn_name);
+
         let function_body_tokens = quote! {
             #[inline(always)]
             #item
 
             #[used]
-            #[unsafe(link_section = "rex/tc")]
             static #prog_ident: sched_cls =
                 sched_cls::new(#fn_name, #function_name);
+
+            #[unsafe(export_name = #function_name)]
+            #[unsafe(link_section = "rex/tc")]
+            extern "C" fn #entry_name(ctx: *mut ()) -> u32 {
+                use rex::prog_type::rex_prog;
+                #prog_ident.prog_run(ctx)
+            }
         };
         Ok(function_body_tokens)
     }
