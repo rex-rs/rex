@@ -95,6 +95,7 @@
         xz.dev
         zlib
         zlib.dev
+        toybox
         bpftools
 
         cargo-pgo
