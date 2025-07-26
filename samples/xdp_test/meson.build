@@ -43,10 +43,37 @@ sample_build = custom_target(
   build_by_default: true
 )
 
-executable(
+xdp_test_entry = executable(
   'entry',
   'entry.c',
   build_by_default: true,
   dependencies: [librex_dep, libbpf_dep, kernel_dep],
   pie: true
+)
+
+sanity_test = custom_target(
+  'sanity_test',
+  output: ['runtest.py'],
+  input: join_paths(meson.current_source_dir(), 'tests/runtest.py'),
+  command: [
+    'cp', '@INPUT@', '@OUTPUT@',
+    ]
+ )
+
+runtest_deps += [sample_build, xdp_test_entry, sanity_test]
+
+sanity_test_env = environment()
+sanity_test_env.set('SAMPLE_PATH', meson.current_build_dir())
+sanity_test_env.set('Q_SCRIPT',
+  join_paths(meson.project_source_root(), 'scripts/q-script/sanity-test-q')
+)
+sanity_test_env.set('KERNEL_PATH', kbuild_dir)
+
+test('xdp_test_test', 
+  python3_bin, 
+  args: [sanity_test_scripts],
+  env: sanity_test_env,
+  depends: runtest_deps,
+  is_parallel: false,
+  workdir: meson.current_build_dir()
 )

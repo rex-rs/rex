@@ -9,11 +9,24 @@ import sys
 
 from pathlib import Path
 
-sample = Path(os.environ.get("SAMPLE_PATH"))
-q_script = Path(os.environ.get("Q_SCRIPT"))
+sample_path = os.environ.get("SAMPLE_PATH")
+if not sample_path:
+    print("Error: SAMPLE_PATH environment variable is required")
+    sys.exit(1)
+sample = Path(sample_path)
+
+q_script_env = os.environ.get("Q_SCRIPT")
+if not q_script_env:
+    print("Error: Q_SCRIPT environment variable is required")
+    sys.exit(1)
+q_script = Path(q_script_env)
 
 # Set Path env
-kernel_path = Path(os.environ.get("KERNEL_PATH"))
+kernel_path_env = os.environ.get("KERNEL_PATH")
+if not kernel_path_env:
+    print("Error: KERNEL_PATH environment variable is required")
+    sys.exit(1)
+kernel_path = Path(kernel_path_env)
 
 
 def main():
