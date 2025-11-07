@@ -66,4 +66,133 @@ impl TaskStruct {
         // The pt_regs should always be on the top of the stack
         unsafe { &*(reg_addr as *const PtRegs) }
     }
+
+    /// Look up a task by its PID using bpf_task_from_pid kfunc.
+    ///
+    /// This function creates a new TaskStruct with proper reference counting.
+    /// The returned TaskStruct will automatically release the reference when dropped.
+    ///
+    /// # Arguments
+    /// * `pid` - The process ID to look up
+    ///
+    /// # Returns
+    /// Returns `Some(TaskStruct)` if the task is found, `None` otherwise.
+    ///
+    /// # Safety
+    /// This function is safe to call, but the returned TaskStruct must be used
+    /// within the BPF program's execution context.
+    pub fn from_pid(pid: i32) -> Option<TaskStructOwned> {
+        let task_ptr = unsafe { ffi::bpf_task_from_pid(pid) };
+
+        if task_ptr.is_null() {
+            None
+        } else {
+            // bpf_task_from_pid already returns a reference-counted pointer
+            Some(TaskStructOwned::new(task_ptr))
+        }
+    }
+
+    /// Acquire a reference to the current TaskStruct.
+    ///
+    /// This creates a reference-counted version of the current task that can be
+    /// stored and used beyond the immediate context.
+    ///
+    /// # Returns
+    /// Returns `Some(TaskStructOwned)` if successful, `None` if the current task
+    /// cannot be acquired.
+    pub fn acquire_current() -> Option<TaskStructOwned> {
+        if let Some(current_task) = Self::get_current_task() {
+            let acquired_ptr = unsafe {
+                ffi::bpf_task_acquire(current_task.kptr as *const _ as *mut _)
+            };
+
+            if acquired_ptr.is_null() {
+                None
+            } else {
+                Some(TaskStructOwned::new(acquired_ptr))
+            }
+        } else {
+            None
+        }
+    }
 }
+
+/// A reference-counted wrapper around TaskStruct that automatically manages
+/// the task_struct reference lifetime using bpf_task_acquire/bpf_task_release.
+///
+/// This struct ensures that the task_struct reference is properly released
+/// when the TaskStructOwned is dropped, preventing reference leaks.
+pub struct TaskStructOwned {
+    task_ptr: *mut task_struct,
+}
+
+impl TaskStructOwned {
+    /// Create a new TaskStructOwned from a raw task_struct pointer.
+    ///
+    /// # Safety
+    /// The caller must ensure that the pointer is valid and already has a reference
+    /// that will be managed by this TaskStructOwned instance.
+    pub(crate) fn new(task_ptr: *mut task_struct) -> Self {
+        Self { task_ptr }
+    }
+
+    /// Get a TaskStruct view of this owned task.
+    ///
+    /// This allows access to all the TaskStruct methods while maintaining
+    /// the reference counting guarantees.
+    pub fn as_task_struct(&self) -> TaskStruct {
+        TaskStruct::new(unsafe { &*self.task_ptr })
+    }
+
+    /// Get the PID of this task.
+    #[inline(always)]
+    pub fn get_pid(&self) -> i32 {
+        self.as_task_struct().get_pid()
+    }
+
+    /// Get the TGID (thread group ID) of this task.
+    #[inline(always)]
+    pub fn get_tgid(&self) -> i32 {
+        self.as_task_struct().get_tgid()
+    }
+
+    /// Get the command name of this task.
+    pub fn get_comm(&self) -> Result<&CStr, core_ffi::FromBytesUntilNulError> {
+        self.as_task_struct().get_comm()
+    }
+
+    /// Get the pt_regs for this task.
+    pub fn get_pt_regs(&self) -> &'static PtRegs {
+        self.as_task_struct().get_pt_regs()
+    }
+
+    /// Clone this TaskStructOwned by acquiring an additional reference.
+    ///
+    /// This allows multiple TaskStructOwned instances to refer to the same task,
+    /// each with their own reference that will be released independently.
+    pub fn clone_ref(&self) -> Option<TaskStructOwned> {
+        let acquired_ptr = unsafe { ffi::bpf_task_acquire(self.task_ptr) };
+
+        if acquired_ptr.is_null() {
+            None
+        } else {
+            Some(TaskStructOwned::new(acquired_ptr))
+        }
+    }
+}
+
+impl Drop for TaskStructOwned {
+    /// Automatically release the task_struct reference when TaskStructOwned is dropped.
+    fn drop(&mut self) {
+        unsafe {
+            ffi::bpf_task_release(self.task_ptr);
+        }
+    }
+}
+
+// TaskStructOwned is Send since task_struct operations are atomic
+unsafe impl Send for TaskStructOwned {}
+
+// TaskStructOwned is not Sync since multiple threads shouldn't access the same
+// task_struct pointer simultaneously without additional synchronization
+impl !Sync for TaskStructOwned {}

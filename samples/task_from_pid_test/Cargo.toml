@@ -1,0 +1,11 @@
+[package]
+name = "task_from_pid_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rex = { path = "../../rex" }
+
+[[bin]]
+name = "task_from_pid_test"
+path = "src/main.rs"

@@ -233,6 +233,27 @@ unsafe extern "C" {
 
     /// void rex_trace_printk(void)
     pub(crate) fn rex_trace_printk();
+
+    /// `struct task_struct *bpf_task_from_pid(s32 pid)`
+    ///
+    /// Find a struct task_struct from its pid by looking it up in the root pid
+    /// namespace idr. If a task is returned, it must either be stored in a map,
+    /// or released with bpf_task_release().
+    /// Returns a pointer that must be released with bpf_task_release() or NULL.
+    pub(crate) fn bpf_task_from_pid(pid: i32) -> *mut task_struct;
+
+    /// `struct task_struct *bpf_task_acquire(struct task_struct *p)`
+    ///
+    /// Acquire a reference to a task_struct. The task_struct must have been
+    /// obtained from a trusted source (e.g., current task, BPF program context).
+    /// Returns the same pointer with an additional reference.
+    pub(crate) fn bpf_task_acquire(task: *mut task_struct) -> *mut task_struct;
+
+    /// `void bpf_task_release(struct task_struct *p)`
+    ///
+    /// Release a reference to a task_struct that was previously acquired with
+    /// bpf_task_acquire() or returned by bpf_task_from_pid().
+    pub(crate) fn bpf_task_release(task: *mut task_struct);
 }
 
 // Global variables
