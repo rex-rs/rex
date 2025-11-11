@@ -233,6 +233,12 @@ unsafe extern "C" {
 
     /// void rex_trace_printk(void)
     pub(crate) fn rex_trace_printk();
+
+    /// __bpf_kfunc struct task_struct *bpf_task_from_pid(s32 pid)
+    pub(crate) fn bpf_task_from_pid(pid: i32) -> *mut task_struct;
+
+    /// __bpf_kfunc void bpf_task_release(struct task_struct *p)
+    pub(crate) fn bpf_task_release(task: *mut task_struct);
 }
 
 // Global variables
