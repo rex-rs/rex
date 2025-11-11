@@ -1,3 +1,4 @@
+use core::fmt::{self, Write};
 use core::intrinsics::unlikely;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
@@ -200,7 +201,7 @@ impl RexRingBuf {
         } else {
             let data =
                 unsafe { slice::from_raw_parts_mut(data as *mut u8, size) };
-            Some(RexRingBufEntry { data })
+            Some(RexRingBufEntry { data, off: 0 })
         }
     }
 
@@ -289,6 +290,7 @@ impl RexRingBuf {
 
 pub struct RexRingBufEntry<'a> {
     data: &'a mut [u8],
+    off: usize, // offset when the entry is used as a &str
 }
 
 impl RexRingBufEntry<'_> {
@@ -326,6 +328,28 @@ impl RexRingBufEntry<'_> {
         });
         // Avoid calling ringbuf_discard twice
         mem::forget(self);
+    }
+}
+
+impl Write for RexRingBufEntry<'_> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        let input_len = s.len();
+        let available = self.data.len() - self.off - 1;
+
+        // Make sure we have enough space
+        if input_len > available {
+            return Err(fmt::Error);
+        }
+
+        // Copy and null-terminated the buf
+        let end = self.off + input_len;
+        self.data[self.off..end].copy_from_slice(s.as_bytes());
+        self.data[end] = 0;
+
+        // Update the write offset
+        self.off = end;
+
+        Ok(())
     }
 }
 
