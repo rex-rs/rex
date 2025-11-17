@@ -334,7 +334,9 @@ impl RexRingBufEntry<'_> {
 impl Write for RexRingBufEntry<'_> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let input_len = s.len();
-        let available = self.data.len() - self.off - 1;
+
+        // Remaining capacity plus the space reserved for the null-terminated
+        let available = self.data.len().saturating_sub(self.off + 1);
 
         // Make sure we have enough space
         if input_len > available {
