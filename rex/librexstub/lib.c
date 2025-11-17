@@ -38,6 +38,8 @@ KSYM_FUNC(bpf_ktime_get_ns)
 KSYM_FUNC(bpf_ktime_get_boot_ns)
 KSYM_FUNC(bpf_ktime_get_coarse_ns)
 KSYM_FUNC(rex_trace_printk)
+KSYM_FUNC(bpf_task_from_pid)
+KSYM_FUNC(bpf_task_release)
 
 // Global variables
 unsigned long jiffies;
