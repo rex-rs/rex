@@ -109,11 +109,11 @@
 
         # Clang kernel builds
         patchedPkgs.llvmPackages.clang
+        patchedPkgs.llvmPackages.llvm
         # wrappedClang
         # llvmPackages.libcxxStdenv
         lld
         mold
-        # llvmPackages.bintools
 
         qemu
         util-linux
@@ -124,6 +124,7 @@
 
         # for llvm/Demangle/Demangle.h
         libllvm.lib
+        libllvm.dev
         libgcc
         libclang.lib
         libclang.dev
