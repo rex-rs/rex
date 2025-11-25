@@ -35,9 +35,15 @@ def main():
     cmd = " ".join([str(q_script), "-t", str(test_path)])
     try:
         # print(cmd)
-        subprocess.run(
+        result = subprocess.run(
             cmd, timeout=180, shell=True, capture_output=True, text=True
         )
+        # Debug: save QEMU output for troubleshooting
+        with open("qemu_stdout.log", "w") as f:
+            f.write(result.stdout)
+        with open("qemu_stderr.log", "w") as f:
+            f.write(result.stderr)
+        print(f"QEMU exit code: {result.returncode}", file=sys.stderr)
         output = subprocess.run(
             "cat auto_grade.txt | grep success",
             capture_output=True,
