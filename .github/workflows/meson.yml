@@ -68,7 +68,29 @@ jobs:
       - name: Run Rex sanity tests
         run: meson test -C build
 
-  build_with_nix:
+  # build_with_nix:
+  #   needs: changes
+  #   if: ${{ needs.changes.outputs.nix == 'true' }}
+  #   runs-on: [self-hosted, nix]
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #
+  #     - name: Setup Rex build directory
+  #       run: meson setup --native-file rex-native.ini --reconfigure ./build
+  #       shell: nix develop -v -L .#rex --command bash -e {0}
+  #
+  #     - name: Compile Rex deps
+  #       run: meson compile -C build build_deps
+  #       shell: nix develop -v -L .#rex --command bash -e {0}
+  #
+  #     - name: Compile Rex samples
+  #       run: meson compile -C build
+  #       shell: nix develop -v -L .#rex --command bash -e {0}
+
+  build_with_nix_fhs:
     needs: changes
     if: ${{ needs.changes.outputs.nix == 'true' }}
     runs-on: [self-hosted, nix]
@@ -79,13 +101,10 @@ jobs:
           submodules: recursive
 
       - name: Setup Rex build directory
-        run: meson setup --native-file rex-native.ini --reconfigure ./build
-        shell: nix develop -v -L .#rex --command bash -e {0}
+        run: nix run .#fhsExec -- -c "meson setup --native-file rex-native.ini --reconfigure ./build"
 
       - name: Compile Rex deps
-        run: meson compile -C build build_deps
-        shell: nix develop -v -L .#rex --command bash -e {0}
+        run: nix run .#fhsExec -- -c "meson compile -C build build_deps"
 
       - name: Compile Rex samples
-        run: meson compile -C build
-        shell: nix develop -v -L .#rex --command bash -e {0}
+        run: nix run .#fhsExec -- -c "meson compile -C build"

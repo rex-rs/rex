@@ -16,7 +16,7 @@
       remoteNixpkgsPatches = [
         {
           meta.description = "cc-wrapper: remove -nostdlibinc";
-        url = "https://github.com/chinrw/nixpkgs/commit/2a5bd9cecd9ae28d899eb9bf434255a9fa09cbb0.patch";
+          url = "https://github.com/chinrw/nixpkgs/commit/2a5bd9cecd9ae28d899eb9bf434255a9fa09cbb0.patch";
           sha256 = "sha256-TBmNtH8C5Vp1UArLtXDk+dxEzUR3tohjPMpJc9pIEN8=";
         }
       ];
@@ -109,13 +109,14 @@
 
         # Clang kernel builds
         patchedPkgs.llvmPackages.clang
+        patchedPkgs.llvmPackages.llvm
         # wrappedClang
         # llvmPackages.libcxxStdenv
         lld
         mold
-        # llvmPackages.bintools
 
         qemu
+        file
         util-linux
         hostname
         sysctl
@@ -124,6 +125,7 @@
 
         # for llvm/Demangle/Demangle.h
         libllvm.lib
+        libllvm.dev
         libgcc
         libclang.lib
         libclang.dev
@@ -155,7 +157,7 @@
       fhsBase =
         {
           name = "rex-env";
-          targetPkgs = pkgs: rexPackages;
+          targetPkgs = pkgs: rexPackages ++ [ pkgs.systemd pkgs.file ];
 
           profile = ''
             export NIX_ENFORCE_NO_NATIVE=0
@@ -168,14 +170,13 @@
         runScript = "zsh";
       });
 
-      fhsCI = llvmBuildFHSEnv (fhsBase // {
-        name = "rex-ci";
-        runScript = "
-        meson setup --native-file rex-native.ini --reconfigure ./build || exit 1 
-        meson compile -C build build_deps || exit 1
-        meson compile -C build || exit 1
-        meson test -C build || exit 1
-        ";
+      # FHS environment for running arbitrary commands
+      fhsExec = llvmBuildFHSEnv (fhsBase // {
+        name = "rex-exec";
+        runScript = pkgs.writeScript "fhs-exec-wrapper" ''
+          #!${pkgs.bash}/bin/bash
+          exec bash "$@"
+        '';
       });
 
     in
@@ -197,8 +198,8 @@
 
             export PATH=$(realpath "./build/rust-dist/bin"):$PATH
             # Add required llvm-config
-            export PATH=${patchedPkgs.llvmPackages.libllvm.out}/bin:$PATH 
-            export PATH=${patchedPkgs.llvmPackages.libllvm.dev}/bin:$PATH 
+            export PATH=${patchedPkgs.llvmPackages.libllvm.out}/bin:$PATH
+            export PATH=${patchedPkgs.llvmPackages.libllvm.dev}/bin:$PATH
             export RUST_BACKTRACE=1
             export NIX_ENFORCE_NO_NATIVE=0
             export LLVM_SRC_INC="$PWD/rust/src/llvm-project/llvm/include"
@@ -207,6 +208,11 @@
             echo "loading rex env"
           '';
         };
+      };
+
+      packages."${system}" = {
+        fhsRex = fhsRex;
+        fhsExec = fhsExec;
       };
     };
 
