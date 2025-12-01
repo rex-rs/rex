@@ -6,6 +6,9 @@
 #include <bpf/libbpf.h>
 #include <gelf.h>
 
+/* From tools/lib/bpf/libbpf_internal.h */
+#define SHA256_DIGEST_LENGTH 32
+
 struct elf_state {
   int fd;
   const void *obj_buf;
@@ -102,7 +105,7 @@ struct bpf_object {
 
   struct usdt_manager *usdt_man;
 
-  struct bpf_map *arena_map;
+  int arena_map_idx;
   void *arena_data;
   size_t arena_data_sz;
 
@@ -185,6 +188,7 @@ struct bpf_program {
   __u32 line_info_rec_size;
   __u32 line_info_cnt;
   __u32 prog_flags;
+  __u8 hash[SHA256_DIGEST_LENGTH];
 };
 
 enum libbpf_map_type {
@@ -236,6 +240,7 @@ struct bpf_map {
   bool autocreate;
   bool autoattach;
   __u64 map_extra;
+  struct bpf_program *excl_prog;
 };
 
 #endif // _LIBREX_BINDINGS_H
