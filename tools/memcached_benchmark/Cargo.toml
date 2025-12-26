@@ -6,7 +6,7 @@ authors = ["Ruowen Qin ruowenq2@illinois.edu"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-memcache = { version = "0.18", default-features = false }
+memcache = { version = "0.19", default-features = false }
 rand = "0"
 rand_distr = "0"
 clap = { version = "4", features = ["derive"] }
@@ -30,7 +30,7 @@ assert_cmd = "2"
 predicates = "3"
 tempfile = "3"
 test-log = "0"
-duct = "0"
+duct = "1"
 
 [profile.release]
 opt-level = 3

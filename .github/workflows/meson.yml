@@ -24,8 +24,8 @@ jobs:
       nix: ${{ steps.filter.outputs.nix }}
     steps:
       # For pull requests it's not necessary to checkout the code
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           predicate-quantifier: 'every'
@@ -46,12 +46,12 @@ jobs:
     runs-on: [self-hosted, gentoo]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           submodules: recursive
 
       - name: Cache Rex build directory
-        uses: actions/cache@v3
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: build
           key: ${{ runner.os }}-${{ runner.name }}-meson-${{ hashFiles('rex-native.ini', 'meson.build') }}
@@ -96,7 +96,7 @@ jobs:
     runs-on: [self-hosted, nix]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           submodules: recursive
 
