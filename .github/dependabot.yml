@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directories:
+      - /
+      - tools/memcached_benchmark
+    schedule:
+      interval: weekly
+    cooldown: # applies only to non-security updates
+      semver-patch: 3d # wait 3 days before applying patch updates
+      semver-minor: 7d
+      semver-major: 14d
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      semver-patch: 3d
+      semver-minor: 7d
+      semver-major: 14d
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
