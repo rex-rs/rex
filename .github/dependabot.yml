@@ -7,17 +7,13 @@ updates:
     schedule:
       interval: weekly
     cooldown: # applies only to non-security updates
-      semver-patch: 3d # wait 3 days before applying patch updates
-      semver-minor: 7d
-      semver-major: 14d
+      semver-patch-days: 3 # wait 3 days before applying patch updates
+      semver-minor-days: 7
+      semver-major-days: 14
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    cooldown:
-      semver-patch: 3d
-      semver-minor: 7d
-      semver-major: 14d
   - package-ecosystem: gitsubmodule
     directory: /
     schedule:
