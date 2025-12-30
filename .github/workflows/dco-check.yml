@@ -7,4 +7,4 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: KineticCafe/actions-dco@v1
+      - uses: KineticCafe/actions-dco@cd9508e5ae82413fbd74b20af21551db0ea3eb78 # v2.0.0

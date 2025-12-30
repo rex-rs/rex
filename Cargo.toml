@@ -8,7 +8,7 @@ members = [
 ]
 
 resolver = "2"
-exclude = ["./samples/", "./rust/", "./tools/", "./scripts/"]
+exclude = ["samples", "rust", "tools", "scripts"]
 
 [workspace.package]
 authors = ["Rex Contributors"]
