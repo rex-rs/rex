@@ -60,7 +60,7 @@ rust_bootstrap = custom_target(
   ],
   console: true,
   build_by_default: false,
-  env: ['RUSTFLAGS=-Z threads=8 -C link-arg=-fuse-ld=mold']
+  env: ['RUSTFLAGS=-C link-arg=-fuse-ld=mold']
 )
 
 all_programs = custom_target('build_deps',
