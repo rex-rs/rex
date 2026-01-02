@@ -167,3 +167,8 @@ Rex is licensed under the GPLv2 license. The submodules (Linux, Rust, LLVM)
 in this repo are licensed under their own terms. Please see the
 corresponding license files for more details. Additionally, the memcached
 benchmark is licensed under the MIT license.
+
+## Talks
+- Open Source Summit North America 2025: https://youtu.be/4r7ECxEaGqM
+- USENIX ATC 2025: https://youtu.be/phJ-fb5lEA8
+- Linux Plumbers Conference 2025: https://youtu.be/ivcLS4LFfKE
