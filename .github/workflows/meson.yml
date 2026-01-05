@@ -35,6 +35,7 @@ jobs:
               - '!docs/**'
               - '!tools/**'
               - '!**/*.md'
+              - '!.github/workflows/!(meson).yml'
             meson:
               - *nix
               - '!flake.nix'
