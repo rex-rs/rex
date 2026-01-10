@@ -1,4 +1,5 @@
 use core::ffi::{c_char, c_uchar};
+use core::marker::PhantomData;
 use core::{mem, slice};
 
 use crate::base_helper::termination_check;
@@ -10,7 +11,6 @@ pub use crate::bindings::uapi::linux::pkt_cls::{
     TC_ACT_OK, TC_ACT_REDIRECT, TC_ACT_SHOT,
 };
 use crate::ffi;
-use crate::prog_type::rex_prog;
 use crate::utils::*;
 
 pub struct __sk_buff<'a> {
@@ -164,19 +164,18 @@ impl<'a> __sk_buff<'a> {
     }
 }
 
-/// prog_fn should have &Self as its first argument
 #[repr(C)]
 pub struct sched_cls {
-    prog: fn(&Self, &mut __sk_buff) -> Result,
+    _placeholder: PhantomData<()>,
 }
 
 impl sched_cls {
     crate::base_helper::base_helper_defs!();
 
-    pub const unsafe fn new(
-        f: fn(&sched_cls, &mut __sk_buff) -> Result,
-    ) -> sched_cls {
-        Self { prog: f }
+    pub const unsafe fn new() -> sched_cls {
+        Self {
+            _placeholder: PhantomData,
+        }
     }
 
     // NOTE: copied from xdp impl, may change in the future
@@ -257,7 +256,7 @@ impl sched_cls {
     // assign this reference a new value either, given that they will not able
     // to create another instance of pt_regs (private fields, no pub ctor)
     #[inline(always)]
-    fn convert_ctx(&self, ctx: *mut ()) -> __sk_buff {
+    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> __sk_buff {
         let kptr = unsafe { &mut *(ctx as *mut sk_buff) };
 
         // NOTE: not support jumobo frame yet with non-linear sk_buff
@@ -268,13 +267,5 @@ impl sched_cls {
         };
 
         __sk_buff { data_slice, kptr }
-    }
-}
-
-impl rex_prog for sched_cls {
-    fn prog_run(&self, ctx: *mut ()) -> u32 {
-        let mut newctx = self.convert_ctx(ctx);
-        // return TC_ACT_OK if error
-        ((self.prog)(self, &mut newctx)).unwrap_or_else(|e| e) as u32
     }
 }

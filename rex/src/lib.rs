@@ -11,7 +11,6 @@
 pub mod kprobe;
 pub mod map;
 pub mod perf_event;
-pub mod prog_type;
 pub mod pt_regs;
 pub mod sched_cls;
 pub mod spinlock;
@@ -31,33 +30,10 @@ mod random32;
 
 extern crate paste;
 
-use paste::paste;
 pub use rex_macros::*;
-
-use crate::prog_type::rex_prog;
 
 #[cfg(not(CONFIG_KALLSYMS_ALL = "y"))]
 compile_error!("CONFIG_KALLSYMS_ALL is required for rex");
-
-macro_rules! define_prog_entry {
-    ($prog_ty:ident) => {
-        paste! {
-            #[unsafe(no_mangle)]
-            #[inline(always)]
-            fn [<__rex_entry_ $prog_ty>](
-                prog: &$prog_ty::$prog_ty,
-                ctx: *mut (),
-            ) -> u32 {
-                prog.prog_run(ctx)
-            }
-        }
-    };
-}
-
-define_prog_entry!(kprobe);
-define_prog_entry!(perf_event);
-define_prog_entry!(xdp);
-define_prog_entry!(sched_cls);
 
 pub use bindings::uapi::*;
 pub use log::rex_trace_printk;
