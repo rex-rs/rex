@@ -1,9 +1,5 @@
 name: Meson Build and Test
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: true
-
 on:
   push:
     branches: [main, ci]
@@ -45,6 +41,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.meson == 'true' }}
     runs-on: [self-hosted, gentoo]
+    concurrency:
+      group: build_and_test-${{ github.ref_name }}
+      cancel-in-progress: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -73,6 +72,9 @@ jobs:
   #   needs: changes
   #   if: ${{ needs.changes.outputs.nix == 'true' }}
   #   runs-on: [self-hosted, nix]
+  #   concurrency:
+  #     group: build_with_nix_fhs-${{ github.ref_name }}
+  #     cancel-in-progress: true
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v4
@@ -95,6 +97,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.nix == 'true' }}
     runs-on: [self-hosted, nix]
+    concurrency:
+      group: build_with_nix_fhs-${{ github.ref_name }}
+      cancel-in-progress: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
