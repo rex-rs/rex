@@ -1,4 +1,5 @@
 use core::intrinsics::unlikely;
+use core::marker::PhantomData;
 
 use crate::base_helper::termination_check;
 use crate::bindings::linux::kernel::bpf_perf_event_data_kern;
@@ -6,7 +7,6 @@ use crate::bindings::uapi::linux::bpf::{bpf_map_type, bpf_perf_event_value};
 use crate::ffi;
 use crate::linux::errno::EINVAL;
 use crate::map::*;
-use crate::prog_type::rex_prog;
 use crate::pt_regs::PtRegs;
 use crate::task_struct::TaskStruct;
 use crate::utils::{to_result, NoRef, Result};
@@ -33,22 +33,24 @@ impl bpf_perf_event_data {
     }
 }
 
-/// prog_fn should have &Self as its first argument
 #[repr(C)]
 pub struct perf_event {
-    prog: fn(&Self, &bpf_perf_event_data) -> Result,
+    _placeholder: PhantomData<()>,
 }
 
 impl perf_event {
     crate::base_helper::base_helper_defs!();
 
-    pub const unsafe fn new(
-        f: fn(&perf_event, &bpf_perf_event_data) -> Result,
-    ) -> perf_event {
-        Self { prog: f }
+    pub const unsafe fn new() -> perf_event {
+        Self {
+            _placeholder: PhantomData,
+        }
     }
 
-    fn convert_ctx(&self, ctx: *mut ()) -> &'static bpf_perf_event_data {
+    pub unsafe fn convert_ctx(
+        &self,
+        ctx: *mut (),
+    ) -> &'static bpf_perf_event_data {
         unsafe { &*(ctx as *mut bpf_perf_event_data) }
     }
 
@@ -90,12 +92,5 @@ impl perf_event {
 
     pub fn bpf_get_current_task(&self) -> Option<TaskStruct> {
         TaskStruct::get_current_task()
-    }
-}
-
-impl rex_prog for perf_event {
-    fn prog_run(&self, ctx: *mut ()) -> u32 {
-        let newctx = self.convert_ctx(ctx);
-        ((self.prog)(self, newctx)).unwrap_or_else(|e| e) as u32
     }
 }

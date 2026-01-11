@@ -1,4 +1,5 @@
 use core::ffi::c_uchar;
+use core::marker::PhantomData;
 use core::mem::size_of;
 use core::{mem, slice};
 
@@ -13,7 +14,6 @@ pub use crate::bindings::uapi::linux::bpf::{
 };
 pub use crate::bindings::uapi::linux::r#in::{IPPROTO_TCP, IPPROTO_UDP};
 use crate::ffi;
-use crate::prog_type::rex_prog;
 use crate::utils::*;
 
 impl iphdr {
@@ -81,17 +81,18 @@ impl xdp_md<'_> {
     }
 }
 
-/// prog_fn should have &Self as its first argument
 #[repr(C)]
 pub struct xdp {
-    prog: fn(&Self, &mut xdp_md) -> Result,
+    _placeholder: PhantomData<()>,
 }
 
 impl xdp {
     crate::base_helper::base_helper_defs!();
 
-    pub const unsafe fn new(f: fn(&xdp, &mut xdp_md) -> Result) -> xdp {
-        Self { prog: f }
+    pub const unsafe fn new() -> xdp {
+        Self {
+            _placeholder: PhantomData,
+        }
     }
 
     // Now returns a mutable ref, but since every reg is private the user prog
@@ -99,7 +100,7 @@ impl xdp {
     // assign this reference a new value either, given that they will not able
     // to create another instance of pt_regs (private fields, no pub ctor)
     #[inline(always)]
-    fn convert_ctx(&self, ctx: *mut ()) -> xdp_md {
+    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> xdp_md {
         let kptr = unsafe { &mut *(ctx as *mut xdp_buff) };
 
         // NOTE: not support jumobo frame yet with non-linear xdp_buff
@@ -181,12 +182,5 @@ impl xdp {
         };
 
         Ok(0)
-    }
-}
-impl rex_prog for xdp {
-    fn prog_run(&self, ctx: *mut ()) -> u32 {
-        let mut newctx = self.convert_ctx(ctx);
-        // Return XDP_PASS if Err, i.e. discard event
-        ((self.prog)(self, &mut newctx)).unwrap_or_else(|e| e) as u32
     }
 }

@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use super::{
     RawSyscallsEnterCtx, RawSyscallsExitCtx, SyscallsEnterDupCtx,
     SyscallsEnterOpenCtx, SyscallsEnterOpenatCtx, SyscallsExitOpenCtx,
@@ -6,8 +8,8 @@ use super::{
 use crate::base_helper::termination_check;
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
 use crate::map::RexPerfEventArray;
-use crate::prog_type::rex_prog;
 use crate::task_struct::TaskStruct;
+use crate::utils::sealed::PerfEventStreamerBase;
 use crate::utils::{to_result, NoRef, PerfEventMaskedCPU, PerfEventStreamer};
 use crate::{ffi, Result};
 
@@ -20,22 +22,21 @@ impl TracepointContext for SyscallsEnterDupCtx {}
 impl TracepointContext for RawSyscallsEnterCtx {}
 impl TracepointContext for RawSyscallsExitCtx {}
 
-/// prog_fn should have &Self as its first argument
 #[repr(C)]
 pub struct tracepoint<C: TracepointContext + 'static> {
-    prog: fn(&Self, &'static C) -> Result,
+    _placeholder: PhantomData<C>,
 }
 
 impl<C: TracepointContext + 'static> tracepoint<C> {
     crate::base_helper::base_helper_defs!();
 
-    pub const unsafe fn new(
-        f: fn(&tracepoint<C>, &'static C) -> Result,
-    ) -> tracepoint<C> {
-        Self { prog: f }
+    pub const unsafe fn new() -> tracepoint<C> {
+        Self {
+            _placeholder: PhantomData,
+        }
     }
 
-    fn convert_ctx(&self, ctx: *mut ()) -> &'static C {
+    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> &'static C {
         unsafe { &*(ctx as *mut C) }
     }
 
@@ -44,12 +45,7 @@ impl<C: TracepointContext + 'static> tracepoint<C> {
     }
 }
 
-impl<C: TracepointContext + 'static> rex_prog for tracepoint<C> {
-    fn prog_run(&self, ctx: *mut ()) -> u32 {
-        let newctx = self.convert_ctx(ctx);
-        ((self.prog)(self, newctx)).unwrap_or_else(|e| e) as u32
-    }
-}
+impl<C: TracepointContext + 'static> PerfEventStreamerBase for tracepoint<C> {}
 
 impl<C: TracepointContext + 'static> PerfEventStreamer for tracepoint<C> {
     type Context = C;

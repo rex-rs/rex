@@ -4,7 +4,6 @@ use core::ops::{Deref, DerefMut, Drop};
 
 use crate::bindings::uapi::linux::bpf::{BPF_F_CURRENT_CPU, BPF_F_INDEX_MASK};
 use crate::map::RexPerfEventArray;
-use crate::prog_type::rex_prog;
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
@@ -291,11 +290,15 @@ macro_rules! read_field {
     }};
 }
 
+pub(crate) mod sealed {
+    pub trait PerfEventStreamerBase {}
+}
+
 // For implementers, see tp_impl.rs for how to implement
 // this trait
 /// Programs that can stream data through a
 /// RexPerfEventArray will implement this trait
-pub trait PerfEventStreamer: rex_prog {
+pub trait PerfEventStreamer: sealed::PerfEventStreamerBase {
     type Context;
     fn output_event<T: Copy + NoRef>(
         &self,

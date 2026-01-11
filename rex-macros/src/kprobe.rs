@@ -64,14 +64,13 @@ impl KProbe {
             #item
 
             #[used]
-            static #prog_ident: kprobe =
-                unsafe { kprobe::new(#fn_name) };
+            static #prog_ident: kprobe = unsafe { kprobe::new() };
 
             #[unsafe(export_name = #function_name)]
             #[unsafe(link_section = #attached_function)]
             extern "C" fn #entry_name(ctx: *mut ()) -> u32 {
-                use rex::prog_type::rex_prog;
-                #prog_ident.prog_run(ctx)
+                let newctx = unsafe { #prog_ident.convert_ctx(ctx) };
+                #fn_name(&#prog_ident, newctx).unwrap_or_else(|e| e) as u32
             }
         };
 

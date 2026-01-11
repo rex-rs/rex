@@ -32,14 +32,14 @@ impl Xdp {
             #item
 
             #[used]
-            static #prog_ident: xdp =
-                unsafe { xdp::new(#fn_name) };
+            static #prog_ident: xdp = unsafe { xdp::new() };
 
             #[unsafe(export_name = #function_name)]
             #[unsafe(link_section = "rex/xdp")]
             extern "C" fn #entry_name(ctx: *mut ()) -> u32 {
-                use rex::prog_type::rex_prog;
-                #prog_ident.prog_run(ctx)
+                let mut newctx = unsafe { #prog_ident.convert_ctx(ctx) };
+                // Return XDP_PASS if Err, i.e. discard event
+                #fn_name(&#prog_ident, &mut newctx).unwrap_or_else(|e| e) as u32
             }
         };
         Ok(function_body_tokens)
