@@ -8,8 +8,25 @@ mod set_values;
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::OnceLock;
 use std::sync::atomic::*;
 use std::vec;
+
+// Global configuration initialized from CLI args
+#[derive(Debug, Clone, Copy)]
+pub struct BenchConfig {
+    pub tcp_pool_size: usize,
+    pub udp_pool_size: usize,
+    pub timeout_ms: u64,
+}
+
+pub static CONFIG: OnceLock<BenchConfig> = OnceLock::new();
+
+impl BenchConfig {
+    pub fn get() -> &'static BenchConfig {
+        CONFIG.get().expect("BenchConfig not initialized")
+    }
+}
 
 use anyhow::{Result, anyhow};
 use clap::Parser;
@@ -66,10 +83,20 @@ fn run_bench() -> Result<()> {
         dict_entries,
         skip_set,
         pipeline,
+        tcp_pool_size,
+        udp_pool_size,
+        timeout_ms,
     } = args.command
     else {
         return Err(anyhow!("invalid command"));
     };
+
+    // Initialize global configuration
+    let _ = CONFIG.set(BenchConfig {
+        tcp_pool_size,
+        udp_pool_size,
+        timeout_ms,
+    });
 
     let server = get_server(&server_address, &port, &protocol)?;
 
