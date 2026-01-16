@@ -2,8 +2,8 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{Ok, Result};
-use assert_cmd::Command;
 use assert_cmd::assert::OutputAssertExt;
+use assert_cmd::cargo::cargo_bin_cmd;
 use duct::{Handle, cmd};
 use log::{debug, info};
 use tempfile::TempDir;
@@ -43,7 +43,7 @@ fn test_memcached_benchmark() -> Result<()> {
         std::env::current_exe().expect("Failed to get current exe path");
     debug!("binpath {:?}", bin_path);
 
-    let gen_dict = Command::cargo_bin(env!("CARGO_PKG_NAME"))?
+    let gen_dict = cargo_bin_cmd!(env!("CARGO_PKG_NAME"))
         .args([
             "gen-testdict",
             "--key-size",
@@ -58,7 +58,7 @@ fn test_memcached_benchmark() -> Result<()> {
     gen_dict.assert().success();
     info!("Generated test dictionary at: {}", dict_path.display());
 
-    let output = Command::cargo_bin(env!("CARGO_PKG_NAME"))?
+    let output = cargo_bin_cmd!(env!("CARGO_PKG_NAME"))
         .args([
             "bench",
             "--server-address",
@@ -92,7 +92,6 @@ fn test_memcached_benchmark() -> Result<()> {
     assert!(stdout.contains("Start set memcached value"));
     assert!(stdout.contains("Throughput across all threads:"));
     assert!(stdout.contains("Done set memcached value"));
-    assert!(stdout.contains("Throughput across all threads:"));
 
     Ok(())
 }

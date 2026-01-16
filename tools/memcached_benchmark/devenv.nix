@@ -5,7 +5,7 @@
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = with pkgs; [ git mold llvmPackages.clangUseLLVM memcached openssl ];
+  packages = with pkgs; [ git mold llvmPackages.clangUseLLVM memcached ];
 
   # https://devenv.sh/languages/
   languages.rust = {

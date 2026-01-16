@@ -3,13 +3,14 @@ use std::sync::Arc;
 use std::sync::atomic::*;
 
 use anyhow::Result;
-use async_memcached::AsciiProtocol;
 use clap::ValueEnum;
 use log::{info, trace};
+use memcache_async::ascii::Protocol as MemcacheProtocol;
 use serde::{Deserialize, Serialize};
-use tokio::net::UdpSocket;
+use tokio::net::{TcpStream, UdpSocket};
 use tokio::sync::mpsc;
 use tokio::time::timeout;
+use tokio_util::compat::TokioAsyncReadCompatExt;
 use tokio_util::task::TaskTracker;
 
 use crate::{BUFFER_SIZE, TIMEOUT_COUNTER};
@@ -137,12 +138,11 @@ pub(crate) async fn get_command_benchmark(
     }
     let sockets_pool = Arc::new(sockets_pool);
 
-    let mut client = async_memcached::Client::new(format!(
-        "tcp://{}:{}",
-        server_address, port
-    ))
-    .await
-    .expect("TCP memcached connection failed");
+    let tcp_addr = format!("{}:{}", server_address, port);
+    let stream = TcpStream::connect(&tcp_addr)
+        .await
+        .expect("TCP memcached connection failed");
+    let mut client = MemcacheProtocol::new(stream.compat());
 
     let tracker = TaskTracker::new();
     let cloned_tracker = tracker.clone();
@@ -161,7 +161,7 @@ pub(crate) async fn get_command_benchmark(
         // if tcp, use set request
         if proto == Protocol::Tcp {
             client
-                .set(&*key, &*value, None, None)
+                .set(&*key, value.as_bytes(), 0)
                 .await
                 .expect("memcached set command failed");
             continue;
@@ -182,8 +182,6 @@ pub(crate) async fn get_command_benchmark(
 
     for handle in handles {
         handle.await?;
-        // let metrics = Handle::current().metrics();
-        // let n = metrics.active_tasks_count();
     }
 
     // Close the channel

@@ -61,6 +61,18 @@ pub(crate) enum Commands {
         #[arg(long, default_value = "200")]
         pipeline: usize,
 
+        /// connection pool size for TCP operations
+        #[arg(long, default_value = "64")]
+        tcp_pool_size: usize,
+
+        /// connection pool size for UDP operations
+        #[arg(long, default_value = "128")]
+        udp_pool_size: usize,
+
+        /// timeout in milliseconds for operations
+        #[arg(long, default_value = "1000")]
+        timeout_ms: u64,
+
         /// dict path to load
         #[arg(
             short = 'f',
