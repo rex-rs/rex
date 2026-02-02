@@ -196,6 +196,7 @@
           LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib.outPath}/lib:${pkgs.lib.makeLibraryPath rexPackages}:$LD_LIBRARY_PATH";
           shellHook = ''
 
+            export NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING=1
             export PATH=$(realpath "./build/rust-dist/bin"):$PATH
             # Add required llvm-config
             export PATH=${patchedPkgs.llvmPackages.libllvm.out}/bin:$PATH
