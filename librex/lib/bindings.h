@@ -27,6 +27,7 @@ struct elf_state {
   int symbols_shndx;
   bool has_st_ops;
   int arena_data_shndx;
+  int jumptables_data_shndx;
 };
 
 struct bpf_sec_def {
@@ -109,12 +110,24 @@ struct bpf_object {
   void *arena_data;
   size_t arena_data_sz;
 
+  void *jumptables_data;
+  size_t jumptables_data_sz;
+
+  struct {
+    struct bpf_program *prog;
+    int sym_off;
+    int fd;
+  } *jumptable_maps;
+  size_t jumptable_map_cnt;
+
   struct kern_feature_cache *feat_cache;
   char *token_path;
   int token_fd;
 
   char path[];
 };
+
+struct bpf_light_subprog;
 
 /*
  * bpf_prog should be a better name but it has been used in
@@ -189,6 +202,9 @@ struct bpf_program {
   __u32 line_info_cnt;
   __u32 prog_flags;
   __u8 hash[SHA256_DIGEST_LENGTH];
+
+  struct bpf_light_subprog *subprogs;
+  __u32 subprog_cnt;
 };
 
 enum libbpf_map_type {
