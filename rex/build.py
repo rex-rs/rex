@@ -47,12 +47,12 @@ $LINUX_SRC/include/linux/compiler_types.h -D__KERNEL__
 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong
 -fno-stack-clash-protection -pg -mfentry -DCC_USING_NOP_MCOUNT
 -DCC_USING_FENTRY -fno-lto -falign-functions=16 -fstrict-flex-arrays=3
--fno-strict-overflow -fno-stack-check -Wall -Wundef
+-fms-extensions -fno-strict-overflow -fno-stack-check -Wall -Wundef
 -Werror=implicit-function-declaration -Werror=implicit-int
 -Werror=return-type -Werror=strict-prototypes -Wno-format-security
 -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member
 -Wmissing-declarations -Wmissing-prototypes -Wframe-larger-than=2048
--Wno-gnu -Wvla -Wno-pointer-sign -Wcast-function-type
+-Wno-gnu -Wno-microsoft-anon-tag -Wvla -Wno-pointer-sign -Wcast-function-type
 -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types
 -Wenum-conversion -Wextra -Wunused -Wno-unused-but-set-variable
 -Wno-unused-const-variable -Wno-format-overflow
