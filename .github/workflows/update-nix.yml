@@ -1,0 +1,46 @@
+name: Update Nix Dependencies
+on:
+  workflow_dispatch:
+  push:
+    branches: [ ci ] # for testing
+  schedule:
+    - cron: '0 0 * * 1' # Monday morning at 00:00 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-nix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
+        with:
+          name: devenv
+      - name: Install devenv.sh
+        run: nix profile add nixpkgs#devenv
+
+      - name: Update tools/memcached_benchmark/devenv.lock
+        run: |
+          cd tools/memcached_benchmark
+          devenv update
+
+      - name: Update root flake.lock
+        uses: DeterminateSystems/update-flake-lock@main
+        with:
+          pr-title: "chore: update nix dependencies"
+          pr-labels: |
+            dependencies
+            nix
+          pr-body: |
+            Automated update of Nix dependencies:
+            - Root `flake.lock` updated
+            - `tools/memcached_benchmark/devenv.lock` updated
