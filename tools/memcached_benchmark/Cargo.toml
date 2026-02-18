@@ -18,7 +18,7 @@ serde_yaml = "0.9"
 serde_json = "1"
 memcache-async = "0.10"
 tokio-util = { version = "0.7", features = ["rt", "compat"] }
-rand_chacha = "0"
+chacha20 = "0"
 log = "0"
 env_logger = { version = "0" }
 mimalloc = "0"

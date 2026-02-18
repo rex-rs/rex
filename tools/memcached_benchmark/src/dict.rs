@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::mem::size_of_val;
 use std::sync::Arc;
 
+use chacha20::ChaCha8Rng;
 use log::{debug, info};
-use rand::Rng;
 use rand::distr::{Alphanumeric, SampleString};
-use rand_chacha::ChaCha8Rng;
-use rand_chacha::rand_core::SeedableRng;
+use rand::{RngExt, SeedableRng};
 use rand_distr::Zipf;
 use rayon::prelude::*;
 
