@@ -256,7 +256,7 @@ impl sched_cls {
     // assign this reference a new value either, given that they will not able
     // to create another instance of pt_regs (private fields, no pub ctor)
     #[inline(always)]
-    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> __sk_buff {
+    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> __sk_buff<'_> {
         let kptr = unsafe { &mut *(ctx as *mut sk_buff) };
 
         // NOTE: not support jumobo frame yet with non-linear sk_buff
