@@ -100,7 +100,7 @@ impl xdp {
     // assign this reference a new value either, given that they will not able
     // to create another instance of pt_regs (private fields, no pub ctor)
     #[inline(always)]
-    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> xdp_md {
+    pub unsafe fn convert_ctx(&self, ctx: *mut ()) -> xdp_md<'_> {
         let kptr = unsafe { &mut *(ctx as *mut xdp_buff) };
 
         // NOTE: not support jumobo frame yet with non-linear xdp_buff

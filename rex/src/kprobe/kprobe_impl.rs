@@ -1,9 +1,9 @@
 use core::marker::PhantomData;
 
 use crate::bindings::uapi::linux::bpf::bpf_map_type;
+use crate::ffi;
 use crate::pt_regs::PtRegs;
 use crate::task_struct::TaskStruct;
-use crate::{ffi, Result};
 
 #[repr(C)]
 pub struct kprobe {
