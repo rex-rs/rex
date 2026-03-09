@@ -7,9 +7,8 @@ mod get_values;
 mod set_values;
 
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::OnceLock;
 use std::sync::atomic::*;
+use std::sync::{Arc, OnceLock};
 use std::vec;
 
 // Global configuration initialized from CLI args
