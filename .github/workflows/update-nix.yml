@@ -22,25 +22,25 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
-        with:
-          name: devenv
-      - name: Install devenv.sh
-        run: nix profile add nixpkgs#devenv
-
-      - name: Update tools/memcached_benchmark/devenv.lock
-        run: |
-          cd tools/memcached_benchmark
-          devenv update
-
       - name: Update root flake.lock
         uses: DeterminateSystems/update-flake-lock@main
         with:
-          pr-title: "nix-flake: update nix dependencies"
+          commit-msg: "nix: update root flake.lock"
+          pr-title: "nix-flake: update root nix dependencies"
           pr-labels: |
             dependencies
             nix
           pr-body: |
-            Automated update of Nix dependencies:
-            - Root `flake.lock` updated
-            - `tools/memcached_benchmark/devenv.lock` updated
+            Automated update of root `flake.lock`.
+
+      - name: Update memcached_benchmark flake.lock
+        uses: DeterminateSystems/update-flake-lock@main
+        with:
+          flake-lock-path: tools/memcached_benchmark/flake.lock
+          commit-msg: "nix: update memcached_benchmark flake.lock"
+          pr-title: "nix-flake: update memcached_benchmark nix dependencies"
+          pr-labels: |
+            dependencies
+            nix
+          pr-body: |
+            Automated update of `tools/memcached_benchmark/flake.lock`.
