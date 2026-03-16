@@ -818,9 +818,9 @@ dependencies = [
 
 [[package]]
 name = "memcache-async"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b18ea195b823973979e442339b2329edf5b5fe22412f70208f7d5cdfa0ed7a0"
+checksum = "618ce1d96419cc1b683ce33babc6ad60a4634e2861e2dbdad4f0b886d8fd8a6c"
 dependencies = [
  "futures",
  "tokio",
