@@ -6,5 +6,5 @@ use crate::ffi;
 #[allow(improper_ctypes_definitions)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn printk(fmt: &str, mut ap: ...) -> c_int {
-    unsafe { ffi::vprintk(fmt.as_ptr() as *const c_uchar, ap.as_va_list()) }
+    unsafe { ffi::vprintk(fmt.as_ptr() as *const c_uchar, ap) }
 }
