@@ -16,9 +16,11 @@ jobs:
       - name: Determine nightly date from rust submodule
         id: rust-version
         run: |
-          # Extract the release date from the first line of rust/RELEASES.md
-          # Format: "Version X.Y.Z (YYYY-MM-DD)"
-          NIGHTLY_DATE=$(head -1 rust/RELEASES.md | grep -oP '\d{4}-\d{2}-\d{2}')
+          # compiler_date in src/stage0 is the previous stable's release date,
+          # which is the same day the beta branch is cut and nightly bumps forward.
+          # The day before is the last nightly that matches this version's rustfmt.
+          COMPILER_DATE=$(grep '^compiler_date=' rust/src/stage0 | cut -d= -f2)
+          NIGHTLY_DATE=$(date -d "${COMPILER_DATE} - 1 day" +%Y-%m-%d)
           echo "nightly_date=${NIGHTLY_DATE}" >> "$GITHUB_OUTPUT"
           echo "Using nightly-${NIGHTLY_DATE}"
       - name: Install matching rust nightly
