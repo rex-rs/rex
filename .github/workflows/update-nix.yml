@@ -26,21 +26,29 @@ jobs:
         uses: DeterminateSystems/update-flake-lock@main
         with:
           commit-msg: "nix: update root flake.lock"
-          pr-title: "nix-flake: update root nix dependencies"
+          pr-title: "nix-flake: update nix dependencies"
           pr-labels: |
             dependencies
             nix
           pr-body: |
-            Automated update of root `flake.lock`.
+            Automated update of nix flake dependencies.
+
+            Updated lock files:
+            - `flake.lock`
+            - `tools/memcached_benchmark/flake.lock`
 
       - name: Update memcached_benchmark flake.lock
         uses: DeterminateSystems/update-flake-lock@main
         with:
           flake-lock-path: tools/memcached_benchmark/flake.lock
           commit-msg: "nix: update memcached_benchmark flake.lock"
-          pr-title: "nix-flake: update memcached_benchmark nix dependencies"
+          pr-title: "nix-flake: update nix dependencies"
           pr-labels: |
             dependencies
             nix
           pr-body: |
-            Automated update of `tools/memcached_benchmark/flake.lock`.
+            Automated update of nix flake dependencies.
+
+            Updated lock files:
+            - `flake.lock`
+            - `tools/memcached_benchmark/flake.lock`
