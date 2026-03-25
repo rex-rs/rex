@@ -132,7 +132,11 @@ impl<'a> CleanupEntries<'a> {
 // The best way to deal with this is probably insert it directly in LLVM IR as
 // an inline asm block
 // For now, use inline(always) to hint the compiler for inlining if LTO is on
+#[allow(unused_attributes)]
 #[unsafe(no_mangle)]
+// Note: Rust warns that inline(always) is ignored on no_mangle functions,
+// #[inline(always)] + #[no_mangle] under fat LTO generally means: inline
+// internally where possible, but still keep the exported symbol
 #[inline(always)]
 unsafe fn __rex_check_stack() {
     // The program can only use the top 4 pages of the stack, therefore subtract
