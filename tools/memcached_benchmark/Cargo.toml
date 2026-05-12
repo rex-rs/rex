@@ -1,3 +1,5 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "memcached_benchmark"
 version = "0.2.0"
@@ -38,3 +40,12 @@ debug = false
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# Profile for flamegraph / perf: full optimizations plus debuginfo and frame
+# pointers so call graphs are legible.
+[profile.profiling]
+inherits = "release"
+debug = "full"
+strip = false
+split-debuginfo = "off"
+rustflags = ["-Cforce-frame-pointers=yes"]
