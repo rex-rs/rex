@@ -1,54 +1,63 @@
 name: Update Nix Dependencies
+
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [ ci ] # for testing
   schedule:
-    - cron: '0 0 * * 1' # Monday morning at 00:00 UTC
+    - cron: '0 0 * * 1' # Monday 00:00 UTC
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: update-nix-${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   update-nix:
+    if: github.repository == 'rex-rs/rex'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.NIX_UPDATE_PAT }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
 
       - name: Update root flake.lock
-        uses: DeterminateSystems/update-flake-lock@main
+        run: nix flake update
+
+      - name: Update tools/memcached_benchmark flake.lock
+        run: nix flake update --flake ./tools/memcached_benchmark
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          commit-msg: "nix: update root flake.lock"
-          pr-title: "nix-flake: update nix dependencies"
-          pr-labels: |
-            dependencies
-            nix
-          pr-body: |
-            Automated update of nix flake dependencies.
+          token: ${{ secrets.NIX_UPDATE_PAT }}
+          branch: update-nix-flake-lock
+          delete-branch: true
+          author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          commit-message: |
+            nix: update flake.lock files
+
+            Automated weekly update of nix flake inputs:
+            - flake.lock
+            - tools/memcached_benchmark/flake.lock
+
+            Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          title: 'nix: update flake.lock files'
+          body: |
+            Automated update of nix flake inputs.
 
             Updated lock files:
             - `flake.lock`
             - `tools/memcached_benchmark/flake.lock`
 
-      - name: Update memcached_benchmark flake.lock
-        uses: DeterminateSystems/update-flake-lock@main
-        with:
-          flake-lock-path: tools/memcached_benchmark/flake.lock
-          commit-msg: "nix: update memcached_benchmark flake.lock"
-          pr-title: "nix-flake: update nix dependencies"
-          pr-labels: |
+            Triggered by: ${{ github.event_name }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          labels: |
             dependencies
             nix
-          pr-body: |
-            Automated update of nix flake dependencies.
-
-            Updated lock files:
-            - `flake.lock`
-            - `tools/memcached_benchmark/flake.lock`
