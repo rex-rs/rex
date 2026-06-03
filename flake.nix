@@ -98,21 +98,15 @@
         bpftools
 
         cargo-pgo
+        xterm
 
         ninja
         patchedPkgs.rust-bindgen
         pahole
         strace
         zstd
-        perf-tools
-        # linuxKernel.packages.linux_latest.perf
+        perf
 
-        # Clang kernel builds
-        patchedPkgs.llvmPackages.clang
-        patchedPkgs.llvmPackages.llvm
-        # wrappedClang
-        # llvmPackages.libcxxStdenv
-        lld
         mold
 
         qemu
@@ -121,14 +115,17 @@
         hostname
         sysctl
 
-        perf-tools
 
+        # Clang kernel builds
+        patchedPkgs.llvmPackages_22.clang
+        patchedPkgs.llvmPackages_22.llvm
         # for llvm/Demangle/Demangle.h
-        libllvm.lib
-        libllvm.dev
+        llvmPackages_22.libllvm.lib
+        llvmPackages_22.libllvm.dev
+        llvmPackages_22.libclang.lib
+        llvmPackages_22.libclang.dev
+        llvmPackages_22.lld
         libgcc
-        libclang.lib
-        libclang.dev
 
         # meson deps
         meson
@@ -199,8 +196,8 @@
             export NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING=1
             export PATH=$(realpath "./build/rust-dist/bin"):$PATH
             # Add required llvm-config
-            export PATH=${patchedPkgs.llvmPackages.libllvm.out}/bin:$PATH
-            export PATH=${patchedPkgs.llvmPackages.libllvm.dev}/bin:$PATH
+            export PATH=${patchedPkgs.llvmPackages_22.libllvm.out}/bin:$PATH
+            export PATH=${patchedPkgs.llvmPackages_22.libllvm.dev}/bin:$PATH
             export RUST_BACKTRACE=1
             export NIX_ENFORCE_NO_NATIVE=0
             export LLVM_SRC_INC="$PWD/rust/src/llvm-project/llvm/include"
