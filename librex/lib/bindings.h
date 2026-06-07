@@ -109,13 +109,14 @@ struct bpf_object {
   int arena_map_idx;
   void *arena_data;
   size_t arena_data_sz;
+  size_t arena_data_off;
 
   void *jumptables_data;
   size_t jumptables_data_sz;
 
   struct {
     struct bpf_program *prog;
-    int sym_off;
+    unsigned int sym_off;
     int fd;
   } *jumptable_maps;
   size_t jumptable_map_cnt;
