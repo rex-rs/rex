@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <libelf.h>
 #include <linux/bpf.h>
+#include <linux/unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
