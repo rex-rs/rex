@@ -9,70 +9,31 @@
     let
       system = "x86_64-linux";
 
-      basePkgs = import nixpkgs {
-        inherit system;
-      };
-
-      remoteNixpkgsPatches = [
-        {
-          meta.description = "cc-wrapper: remove -nostdlibinc";
-          url = "https://github.com/chinrw/nixpkgs/commit/4ffadc2b6f0ee629a5cc99b667b83109f16ff4c5.patch";
-          sha256 = "sha256-dWuEUREn+TpJO8maDlpNghb43DLmWmReIVQlYzuTUwc=";
-        }
-      ];
-
-      patchedNixpkgsSrc = basePkgs.applyPatches {
-        name = "nixpkgs-patched";
-        src = basePkgs.path;
-        patches = map basePkgs.fetchpatch remoteNixpkgsPatches;
-      };
-
-      # patchedBindgen =
-      #   (self: super: {
-      #     rust-bindgen-unwrapped = super.rust-bindgen-unwrapped.overrideAttrs (finalAttrs: oldAttrs: {
-      #       src = super.fetchFromGitHub {
-      #         owner = "rust-lang";
-      #         repo = "rust-bindgen";
-      #         rev = "20aa65a0b9edfd5f8ab3e038197da5cb2c52ff18";
-      #         sha256 = "sha256-OrwPpXXfbkeS7SAmZDZDUXZV4BfSF3e/58LJjedY1vA=";
-      #       };
-      #       cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
-      #         inherit (finalAttrs) pname src version;
-      #         hash = finalAttrs.cargoHash;
-      #       };
-      #       cargoHash = "sha256-e94pwjeGOv/We6uryQedj7L41dhCUc2wzi/lmKYnEMA=";
-      #     });
-      #   });
-
-      patchedPkgs = import patchedNixpkgsSrc {
-        inherit system;
-        # overlays = [ patchedBindgen ];
-      };
-
       pkgs = import nixpkgs {
         inherit system;
-        # overlays = [ overrideLLVM ];
       };
 
-      wrapCC = cc: pkgs.wrapCCWith {
-        inherit cc;
-        extraBuildCommands = ''
-          # Remove the line that contains "-nostdlibinc"
+      # Strip -nostdlibinc from an existing nixpkgs clang wrapper
+      wrapCC = clangWrapper: clangWrapper.overrideAttrs (old: {
+        postFixup = old.postFixup + ''
           sed -i 's|-nostdlibinc||g' "$out/nix-support/cc-cflags"
-          echo " -resource-dir=${pkgs.llvmPackages.clang}/resource-root" >> "$out/nix-support/cc-cflags"
-          echo > "$out/nix-support/add-local-cc-cflags-before.sh"
         '';
+      });
+
+      wrappedClang = wrapCC pkgs.llvmPackages_22.clang;
+
+      # The bindgen bakes the flags nix-support/cc-cflags into the wrapper
+      # script at build time, so -nostdlibinc needs to be removed with the
+      # wrapCC
+      cleanBindgen = pkgs.rust-bindgen.override {
+        rust-bindgen-unwrapped = pkgs.rust-bindgen-unwrapped.override {
+          clang = wrapCC pkgs.clang;
+        };
       };
-
-
-
-      # wrappedClang = wrapCC pkgs.llvmPackages.clang.cc;
-      # lib = nixpkgs.lib;
 
       # Use unwrapped clang & lld to avoid warnings about multi-target usage
       rexPackages = with pkgs; [
         # Kernel builds
-        autoconf
         bc
         binutils
         bison
@@ -80,12 +41,10 @@
         diffutils
         elfutils
         elfutils.dev
-        fakeroot
         findutils
         flex
         git
         gcc
-        getopt
         gnumake
         ncurses
         openssl
@@ -97,13 +56,9 @@
         zlib.dev
         bpftools
 
-        cargo-pgo
-        xterm
-
         ninja
-        patchedPkgs.rust-bindgen
+        cleanBindgen
         pahole
-        strace
         zstd
         perf
 
@@ -117,13 +72,12 @@
 
 
         # Clang kernel builds
-        patchedPkgs.llvmPackages_22.clang
-        patchedPkgs.llvmPackages_22.llvm
+        wrappedClang
+        llvmPackages_22.llvm
         # for llvm/Demangle/Demangle.h
         llvmPackages_22.libllvm.lib
         llvmPackages_22.libllvm.dev
         llvmPackages_22.libclang.lib
-        llvmPackages_22.libclang.dev
         llvmPackages_22.lld
         libgcc
 
@@ -154,7 +108,7 @@
       fhsBase =
         {
           name = "rex-env";
-          targetPkgs = pkgs: rexPackages ++ [ pkgs.systemd pkgs.file ];
+          targetPkgs = pkgs: rexPackages ++ [ pkgs.systemd ];
 
           profile = ''
             export NIX_ENFORCE_NO_NATIVE=0
@@ -196,8 +150,8 @@
             export NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING=1
             export PATH=$(realpath "./build/rust-dist/bin"):$PATH
             # Add required llvm-config
-            export PATH=${patchedPkgs.llvmPackages_22.libllvm.out}/bin:$PATH
-            export PATH=${patchedPkgs.llvmPackages_22.libllvm.dev}/bin:$PATH
+            export PATH=${pkgs.llvmPackages_22.libllvm.out}/bin:$PATH
+            export PATH=${pkgs.llvmPackages_22.libllvm.dev}/bin:$PATH
             export RUST_BACKTRACE=1
             export NIX_ENFORCE_NO_NATIVE=0
             export LLVM_SRC_INC="$PWD/rust/src/llvm-project/llvm/include"
