@@ -1,12 +1,13 @@
-rex_rootdir = '..'
-
 llvm_dep = dependency('llvm', version : '>=18')
 elf_dep = dependency('libelf')
+
+subdir('lib')
 
 librex_public_inc = include_directories('include')
 
 librex_sources = [
-  'lib/librex.cpp'
+  'lib/librex.cpp',
+  librex_binding
 ]
 
 librex = library(

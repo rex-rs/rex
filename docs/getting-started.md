@@ -24,6 +24,7 @@ The following tools/libraries are required. Older versions are not
 guaranteed to (or guaranteed not to) work. This list does not include
 standard kernel build dependencies.
 - `clang+LLVM (>= 18.1.0)`
+- `libclang python bindings`
 - `cmake`
 - `elfutils`
 - `libstdc++ (>=13)` for missing `c++23` support in LLVM's `libcxx`
