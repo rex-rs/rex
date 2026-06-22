@@ -38,7 +38,18 @@ bindgen = find_program('bindgen')
 cmake = find_program('cmake')
 ninja = find_program('ninja')
 perl = find_program('perl')
-python3_bin = find_program('python3', version: '>=3.11')
+# Python binding for libclang is required to auto-generate the
+# libbpf bindings in librex
+python3_bin = import('python').find_installation(
+  'python3',
+  modules: ['clang.cindex']
+)
+assert(
+  python3_bin.language_version().version_compare('>=3.11'),
+  'python3 >= 3.11 is required'
+)
+cc = meson.get_compiler('c')
+cc.find_library('clang', required: true)
 realpath = find_program('realpath')
 lld = find_program('ld.lld')
 bc = find_program('bc')
