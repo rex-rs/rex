@@ -93,7 +93,13 @@
         # bmc deps
         iproute2
         memcached
-        python3
+        # used to auto-generate the libbpf bindings in librex; pinned to LLVM 22
+        # (matches llvmPackages_22).
+        (python3.withPackages (ps: [
+          ((ps.libclang.override { llvmPackages = llvmPackages_22; }).overrideAttrs (old: {
+            prePatch = (old.prePatch or "") + "rm -f ./pyproject.toml ./setup.cfg\n";
+          }))
+        ]))
 
         # Rex utils
         zoxide # in case host is using zoxide
