@@ -59,13 +59,14 @@ def main(argv):
             decl = ct.get_declaration()
             file = decl.location.file
             # Again, discard any non-local nodes
-            if not file or file.name != filename or ct.spelling in found:
+            def_name = decl.type.get_canonical().spelling
+            if not file or file.name != filename or def_name in found:
                 continue
 
             wq.append(decl)
             # Note: we do not need to store the node of anon-structs, because
             # they are already emmbedded in the current struct
-            found[ct.spelling] = decl if not decl.is_anonymous() else None
+            found[def_name] = decl if not decl.is_anonymous() else None
 
     # Workqueue traverse the definitions top-down, but we need them to be
     # bottom-up in the generated header file
