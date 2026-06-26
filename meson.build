@@ -48,8 +48,6 @@ assert(
   python3_bin.language_version().version_compare('>=3.11'),
   'python3 >= 3.11 is required'
 )
-cc = meson.get_compiler('c')
-cc.find_library('clang', required: true)
 realpath = find_program('realpath')
 lld = find_program('ld.lld')
 bc = find_program('bc')
