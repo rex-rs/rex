@@ -107,7 +107,6 @@
         bat
         fd
         eza
-        zsh
       ];
 
       llvmBuildFHSEnv = pkgs.buildFHSEnv.override { stdenv = pkgs.llvmPackages.stdenv; };
@@ -124,16 +123,7 @@
         };
 
       fhsRex = llvmBuildFHSEnv (fhsBase // {
-        runScript = "zsh";
-      });
-
-      # FHS environment for running arbitrary commands
-      fhsExec = llvmBuildFHSEnv (fhsBase // {
-        name = "rex-exec";
-        runScript = pkgs.writeScript "fhs-exec-wrapper" ''
-          #!${pkgs.bash}/bin/bash
-          exec bash "$@"
-        '';
+        runScript = "${pkgs.bash}/bin/bash";
       });
 
     in
@@ -169,8 +159,7 @@
       };
 
       packages."${system}" = {
-        fhsRex = fhsRex;
-        fhsExec = fhsExec;
+        inherit fhsRex;
       };
     };
 
