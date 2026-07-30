@@ -123,16 +123,16 @@
           '';
         };
 
+      # QEMU exports this environment's root filesystem to the guest. envfs
+      # only populates /bin and /usr/bin on configured NixOS hosts, so it
+      # cannot replace the FHS environment for portable sanity tests.
       fhsRex = llvmBuildFHSEnv (fhsBase // {
-        runScript = "zsh";
-      });
-
-      # FHS environment for running arbitrary commands
-      fhsExec = llvmBuildFHSEnv (fhsBase // {
-        name = "rex-exec";
-        runScript = pkgs.writeScript "fhs-exec-wrapper" ''
+        runScript = pkgs.writeScript "rex-env-wrapper" ''
           #!${pkgs.bash}/bin/bash
-          exec bash "$@"
+          if [[ $# -eq 0 ]]; then
+            exec ${pkgs.zsh}/bin/zsh
+          fi
+          exec ${pkgs.bash}/bin/bash "$@"
         '';
       });
 
@@ -169,8 +169,7 @@
       };
 
       packages."${system}" = {
-        fhsRex = fhsRex;
-        fhsExec = fhsExec;
+        inherit fhsRex;
       };
     };
 

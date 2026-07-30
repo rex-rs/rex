@@ -107,10 +107,13 @@ jobs:
           submodules: recursive
 
       - name: Setup Rex build directory
-        run: nix run .#fhsExec -- -c "meson setup --native-file rex-native.ini --reconfigure ./build"
+        run: nix run .#fhsRex -- -c "meson setup --native-file rex-native.ini -Dc_args=-march=x86-64 -Dcpp_args=-march=x86-64 --reconfigure ./build"
 
       - name: Compile Rex deps
-        run: nix run .#fhsExec -- -c "meson compile -C build build_deps"
+        run: nix run .#fhsRex -- -c "meson compile -C build build_deps"
 
       - name: Compile Rex samples
-        run: nix run .#fhsExec -- -c "meson compile -C build"
+        run: nix run .#fhsRex -- -c "meson compile -C build"
+
+      - name: Run Rex sanity tests
+        run: nix run .#fhsRex -- -c "meson test -C build"
