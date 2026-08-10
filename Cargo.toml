@@ -19,7 +19,7 @@ edition = "2021"
 proc-macro-error = { version = "1.0", default-features = false }
 proc-macro2 = { version = "1", default-features = false }
 paste = { version = "1" }
-syn = { version = "2", features = ["full"] }
+syn = { version = "3", features = ["full"] }
 quote = { version = "1" }
 rex-macros = { path = "./rex-macros" }
 
